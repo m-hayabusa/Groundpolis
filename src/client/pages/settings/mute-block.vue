@@ -1,8 +1,20 @@
 <template>
 <section class="rrfwjxfl _section">
-	<MkTab v-model:value="tab" :items="[{ label: $t('mutedUsers'), value: 'mute' }, { label: $t('blockedUsers'), value: 'block' }]" style="margin-bottom: var(--margin);"/>
+	<MkTab v-model:value="tab" :items="[{ label: $t('mutedUsers'), value: 'mute' }, { label: $t('renoteMutedUsers'), value: 'renote' }, { label: $t('blockedUsers'), value: 'block' }]" style="margin-bottom: var(--margin);"/>
 	<div class="_content" v-if="tab === 'mute'">
 		<MkPagination :pagination="mutingPagination" class="muting">
+			<template #empty><MkInfo>{{ $t('noUsers') }}</MkInfo></template>
+			<template #default="{items}">
+				<div class="user" v-for="mute in items" :key="mute.id">
+					<MkA class="name" :to="userPage(mute.mutee)">
+						<MkAcct :user="mute.mutee"/>
+					</MkA>
+				</div>
+			</template>
+		</MkPagination>
+	</div>
+		<div class="_content" v-if="tab === 'renote'">
+		<MkPagination :pagination="renoteMutingPagination" class="muting">
 			<template #empty><MkInfo>{{ $t('noUsers') }}</MkInfo></template>
 			<template #default="{items}">
 				<div class="user" v-for="mute in items" :key="mute.id">
@@ -48,6 +60,16 @@ export default defineComponent({
 			tab: 'mute',
 			mutingPagination: {
 				endpoint: 'mute/list',
+				params:{
+					isRenoteOnly: false,
+				},
+				limit: 10,
+			},
+			renoteMutingPagination: {
+				endpoint: 'mute/list',
+				params:{
+					isRenoteOnly: true,
+				},
 				limit: 10,
 			},
 			blockingPagination: {
