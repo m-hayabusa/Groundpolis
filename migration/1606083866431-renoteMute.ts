@@ -4,7 +4,7 @@ export class renoteMute1606083866431 implements MigrationInterface {
     name = 'renoteMute1606083866431'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "muting" ADD "isRenoteOnly" boolean NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "muting" ADD "isRenoteOnly" boolean NOT NULL DEFAUKT FALSE`);
         await queryRunner.query(`COMMENT ON COLUMN "muting"."isRenoteOnly" IS 'Mute only reposts'`);
     }
 
