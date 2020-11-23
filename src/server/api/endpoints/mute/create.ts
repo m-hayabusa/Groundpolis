@@ -78,11 +78,9 @@ export default define(meta, async (ps, user) => {
 		muteeId: mutee.id
 	});
 
-	if (exist != null && exist.isRenoteOnly == ps.isRenoteOnly) {
+	if (exist != null && exist.isRenoteOnly === ps.isRenoteOnly) {
 		throw new ApiError(meta.errors.alreadyMuting);
 	}
-
-	const id = (exist != null) ? exist.id : genId();
 
 	// Create mute
 	await Mutings.save({
