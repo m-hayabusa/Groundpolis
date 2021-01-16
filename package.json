@@ -1,6 +1,6 @@
 {
 	"name": "groundpolis",
-	"version": "12.67.0-gp-4.10.0",
+	"version": "12.67.0-gp-4.10.0-nkhm",
 	"private": true,
 	"author": "Xeltica <xeltica@gmail.com>",
 	"contributors": [
@@ -9,7 +9,7 @@
 	"codename": "sonic",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/groundpolis/groundpolis.git"
+		"url": "https://github.com/m-hayabusa/Groundpolis.git"
 	},
 	"scripts": {
 		"bs": "npm run build && npm run start",
