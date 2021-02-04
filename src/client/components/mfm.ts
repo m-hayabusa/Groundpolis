@@ -1,15 +1,15 @@
 import { VNode, defineComponent, h } from 'vue';
-import { MfmForest } from '../../mfm/prelude';
-import { parse, parsePlain } from '../../mfm/parse';
-import MkUrl from './url.vue';
-import MkLink from './link.vue';
-import MkMention from './mention.vue';
-import MkEmoji from './emoji.vue';
-import { concat } from '../../prelude/array';
-import MkFormula from './formula.vue';
-import MkCode from './code.vue';
-import MkGoogle from './google.vue';
-import MkA from './ui/a.vue';
+import { MfmForest } from '@/../mfm/prelude';
+import { parse, parsePlain } from '@/../mfm/parse';
+import MkUrl from '@/components/global/url.vue';
+import MkLink from '@/components/link.vue';
+import MkMention from '@/components/mention.vue';
+import MkEmoji from '@/components/global/emoji.vue';
+import { concat } from '@/../prelude/array';
+import MkFormula from '@/components/formula.vue';
+import MkCode from '@/components/code.vue';
+import MkGoogle from '@/components/google.vue';
+import MkA from '@/components/global/a.vue';
 import { host } from '@/config';
 import { mfmFunctions, MfmFunctionStyleProp } from './mfm.functions';
 
@@ -49,6 +49,11 @@ export default defineComponent({
 
 		const ast = (this.plain ? parsePlain : parse)(this.text);
 
+		const validTime = (t: string | null | undefined) => {
+			if (t == null) return null;
+			return t.match(/^[0-9.]+s$/) ? t : null;
+		};
+
 		const genEl = (ast: MfmForest) => concat(ast.map((token): VNode[] => {
 			switch (token.node.type) {
 				case 'text': {
@@ -81,7 +86,12 @@ export default defineComponent({
 				case 'fn': {
 					const { name, args } = token.node.props as { name: string, args: MfmFunctionStyleProp };
 					const fn = mfmFunctions[name];
-					const noAnimatedMfm = !this.$store.state.device.animatedMfm;
+					if (typeof fn === 'object' && fn.class) { 
+						return [h('span', {
+							class: fn.class,
+						}, genEl(token.children))];
+					}
+					const noAnimatedMfm = !this.$store.state.animatedMfm;
 					const noAnimatedStyle = !fn ? '' : typeof fn === 'string' ? '' : fn.noAnimatedMfmStyle ? (typeof fn.noAnimatedMfmStyle === 'boolean' ? fn.style(args) : fn.noAnimatedMfmStyle(args)) : '';
 					const style = noAnimatedMfm ? noAnimatedStyle : !fn ? '' : typeof fn === 'string' ? fn : fn.style(args);
 
@@ -115,7 +125,7 @@ export default defineComponent({
 				}
 
 				case 'marquee': {
-					if (!this.$store.state.device.animatedMfm) {
+					if (!this.$store.state.animatedMfm) {
 						return genEl(token.children) as any;
 					}
 

@@ -1,45 +1,46 @@
 <template>
-<div>
-	<div class="_section _vMargin">
-		<div class="_content">
-			<p v-text="$t('_labs.description')"/>
-		</div>
-		<div class="_card _vMargin">
-			<div class="_content">
-				<MkSwitch v-model:value="injectUnlistedNoteInLTL">
-					{{ $t('showUnlistedNotesInLTL') }}
-					<template #desc>{{ $t('showUnlistedNotesInLTLDesc') }}</template>
-				</MkSwitch>
-			</div>
-		</div>
+<FormBase>
+	<div class="_formItem">
+		<div class="_formLabel" style="font-size: 100%">{{ $ts._labs.description }}</div>
 	</div>
-</div>
+
+	<!-- <div class="_formItem _formPanel" style="padding: 16px;">
+		{{ $ts._labs.notAvailable }}
+	</div> -->
+
+	<FormSwitch v-model:value="disableReactions">
+		{{ $ts._labs.useLike }}
+		<template #desc>{{ $ts._labs.useLikeDesc }}</template>
+	</FormSwitch>
+	<FormLink to="labs/custom-css">
+		{{ $ts._labs.customCss }}
+	</FormLink>
+	<FormLink to="experimental-features">
+		{{ $ts.experimentalFeatures }} (Misskey)
+	</FormLink>
+</FormBase>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import MkSwitch from '@/components/ui/switch.vue';
-import MkButton from '@/components/ui/button.vue';
-import * as os from '@/os';
+import FormBase from '@/components/form/base.vue';
+import FormLink from '@/components/form/link.vue';
+import FormSwitch from '@/components/form/switch.vue';
+import { defaultStore } from '@/store';
 
 export default defineComponent({
 	components: {
-		MkSwitch,
-		MkButton,
+		FormBase,
+		FormLink,
+		FormSwitch,
 	},
 
 	computed: {
-		injectUnlistedNoteInLTL: {
-			get() { return this.$store.state.settings.injectUnlistedNoteInLTL; },
-			set(value) { this.$store.dispatch('settings/set', { key: 'injectUnlistedNoteInLTL', value }); }
-		},
+		disableReactions: defaultStore.makeGetterSetter('disableReactions'),
 	},
 
 	watch: {
-		injectUnlistedNoteInLTL() {
-			location.reload();
-		},
 	},
 
 	methods: {

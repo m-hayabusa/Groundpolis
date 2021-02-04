@@ -9,17 +9,16 @@
 	<header>
 		<button v-if="!fixed" class="cancel _button" @click="cancel"><Fa :icon="faTimes"/></button>
 		<div>
-			<button class="_button" @click="insert('> ')" v-tooltip="$t('_mfmpad.quote')"><Fa :icon="faQuoteRight"/></button>
-			<button class="_button" @click="link" v-tooltip="$t('_mfmpad.link')"><Fa :icon="faLink"/></button>
-			<button class="_button function" @click="insertFunction" v-tooltip="$t('_mfmpad.functions')"><code style="font-weight: bold">[]</code></button>
-			<button class="_button" @click="insertMention" v-tooltip="$t('mention')"><Fa :icon="faAt"/></button>
-			<button class="_button" @click="insertEmoji" v-tooltip="$t('emoji')"><Fa :icon="faLaughSquint"/></button>
-			<!-- <button class="_button" @click="mfmPadMenu" v-tooltip="$t('_mfmPad.more')"><Fa :icon="faEllipsisV"/></button> -->
+			<button class="_button" @click="insert('> ')" v-tooltip="$ts._mfmpad.quote"><Fa :icon="faQuoteRight"/></button>
+			<button class="_button" @click="link" v-tooltip="$ts._mfmpad.link"><Fa :icon="faLink"/></button>
+			<button class="_button function" @click="insertFunction" v-tooltip="$ts._mfmpad.functions"><code style="font-weight: bold">[]</code></button>
+			<button class="_button" @click="insertMention" v-tooltip="$ts.mention"><Fa :icon="faAt"/></button>
+			<button class="_button" @click="insertEmoji" v-tooltip="$ts.emoji"><Fa :icon="faLaughSquint"/></button>
 			<div class="divider"></div>
-			<button class="_button help" v-tooltip="$t('help')" @click="help">
+			<button class="_button help" v-tooltip="$ts.help" @click="help">
 				<Fa :icon="faQuestionCircle" />
 			</button>
-			<button class="_button visibility" @click="setVisibility" ref="visibilityButton" v-tooltip="$t('visibility')" v-if="channel == null">
+			<button class="_button visibility" @click="setVisibility" ref="visibilityButton" v-tooltip="$ts.visibility" v-if="channel == null">
 					<Fa v-if="visibility === 'public'" :icon="faGlobe" />
 					<Fa v-if="visibility === 'home'" :icon="faHome" />
 					<Fa v-if="visibility === 'followers'" :icon="faUnlock" />
@@ -32,11 +31,11 @@
 		</div>
 	</header>
 	<div class="form" :class="{ fixed }">
-		<button v-if="quote && !renote" class="_textButton" style="padding-left: 8px" @click="quote = null">{{ $t('unrenote') }}</button>
+		<button v-if="quote && !renote" class="_textButton" style="padding-left: 8px" @click="quote = null">{{ $ts.unrenote }}</button>
 		<XNotePreview class="preview" v-if="reply" :note="reply"/>
 		<XNotePreview class="preview" v-if="quote" :note="quote"/>
 		<div v-if="visibility === 'specified'" class="to-specified">
-			<span style="margin-right: 8px;">{{ $t('recipient') }}</span>
+			<span style="margin-right: 8px;">{{ $ts.recipient }}</span>
 			<div class="visibleUsers">
 				<span v-for="u in visibleUsers" :key="u.id">
 					<MkAcct :user="u"/>
@@ -45,25 +44,28 @@
 				<button @click="addVisibleUser" class="_buttonPrimary"><Fa :icon="faPlus" fixed-width/></button>
 			</div>
 		</div>
-		<input v-show="useCw" ref="cw" class="cw" v-model="cw" :placeholder="$t('annotation')" @keydown="onKeydown">
-		<textarea v-model="text" class="text" :class="{ withCw: useCw }" ref="text" :disabled="posting" :placeholder="placeholder" @keydown="onKeydown" @paste="onPaste"></textarea>
-		<input v-show="useBroadcast" ref="broadcastText" class="broadcastText" v-model="broadcastText" :placeholder="$t('broadcastTextDescription')" @keydown="onKeydown">
-		<XPostFormAttaches class="attaches" :files="files" @updated="updateMedia" @detach="detachMedia"/>
+		<input v-show="useCw" ref="cw" class="cw" v-model="cw" :placeholder="$ts.annotation" @keydown="onKeydown">
+		<textarea v-model="text" class="text" :class="{ withCw: useCw }" ref="text" :disabled="posting" :placeholder="placeholder" @keydown="onKeydown" @paste="onPaste" @compositionupdate="onCompositionUpdate" @compositionend="onCompositionEnd" />
+		<input v-show="useBroadcast" ref="broadcastText" class="broadcastText" v-model="broadcastText" :placeholder="$ts.broadcastTextDescription" @keydown="onKeydown">
+		<XPostFormAttaches class="attaches" :files="files" @updated="updateFiles" @detach="detachFile" @changeSensitive="updateFileSensitive" @changeName="updateFileName"/>
 		<XPollEditor v-if="poll" :poll="poll" @destroyed="poll = null" @updated="onPollUpdate"/>
 		<footer>
-			<button class="_button" @click="chooseFileFrom" v-tooltip="$t('attachFile')"><Fa :icon="faPhotoVideo"/></button>
-			<button class="_button" @click="togglePoll" :class="{ active: poll }" v-tooltip="$t('poll')"><Fa :icon="faPollH"/></button>
-			<button class="_button" @click="useCw = !useCw" :class="{ active: useCw }" v-tooltip="$t('useCw')"><Fa :icon="faEyeSlash"/></button>
-			<button class="_button" @click="useBroadcast = !useBroadcast" :class="{ active: useBroadcast }" v-tooltip="$t('broadcastMode')"><Fa :icon="faBullhorn"/></button>
-			<button class="_button" @click="insertFace" v-tooltip="$t('gacha')"><Fa :icon="faFish"/></button>
-			<button class="_button" @click="showActions" v-tooltip="$t('plugin')" v-if="postFormActions.length > 0"><Fa :icon="faPlug"/></button>
-			<span class="text-count" :class="{ over: trimmedLength(text) > max }">{{ max - trimmedLength(text) }}</span>
+			<button :disabled="!currentAccountIsMyself" class="_button" @click="chooseFileFrom" v-tooltip="$ts.attachFile"><Fa :icon="faPhotoVideo"/></button>
+			<button class="_button" @click="togglePoll" :class="{ active: poll }" v-tooltip="$ts.poll"><Fa :icon="faPollH"/></button>
+			<button class="_button" @click="useCw = !useCw" :class="{ active: useCw }" v-tooltip="$ts.useCw"><Fa :icon="faEyeSlash"/></button>
+			<button class="_button" @click="useBroadcast = !useBroadcast" :class="{ active: useBroadcast }" v-tooltip="$ts.broadcastMode"><Fa :icon="faBullhorn"/></button>
+			<button class="_button" @click="insertFace" v-tooltip="$ts.gacha"><Fa :icon="faFish"/></button>
+			<button v-if="currentAccount && accounts.length > 1" class="_button switch-user" @click="switchUser" v-tooltip="$ts.switchUser">
+				<MkAvatar class="avatar" :user="currentAccount" disable-link disable-preview />
+			</button>
+			<button class="_button" @click="showActions" v-tooltip="$ts.plugin" v-if="postFormActions.length > 0"><Fa :icon="faPlug"/></button>
+			<span class="text-count" :class="{ over: textLength > max }">{{ max - textLength }}</span>
 			<button class="submit _buttonPrimary" :disabled="!canPost" @click="post">
 				<Fa :icon="faPaperPlane" />
 			</button>
 		</footer>
 		<details v-if="text" class="preview" :open="isPreviewOpened" @toggle="isPreviewOpened = $event.target.open">
-			<summary>{{ $t('preview') }}</summary>
+			<summary>{{ $ts.preview }}</summary>
 			<XNotePreview :note="previewNote"/>
 		</details>
 	</div>
@@ -88,7 +90,7 @@ import { Autocomplete } from '@/scripts/autocomplete';
 import * as os from '@/os';
 import { selectFile } from '@/scripts/select-file';
 import { FormItem } from '../scripts/form';
-import { notePostInterruptors, postFormActions } from '@/store';
+import { defaultStore, notePostInterruptors, postFormActions } from '@/store';
 
 export default defineComponent({
 	components: {
@@ -155,9 +157,11 @@ export default defineComponent({
 			poll: null,
 			useCw: false,
 			cw: null,
-			localOnly: this.$store.state.settings.rememberNoteVisibility ? this.$store.state.deviceUser.localOnly : this.$store.state.settings.defaultNoteLocalOnlydefaultNoteLocalOnly,
-			remoteFollowersOnly: this.$store.state.settings.rememberNoteVisibility ? this.$store.state.deviceUser.remoteFollowersOnly : this.$store.state.settings.defaultNoteRemoteFollowersOnly,
-			visibility: this.$store.state.settings.rememberNoteVisibility ? this.$store.state.deviceUser.visibility : this.$store.state.settings.defaultNoteVisibility,
+			localOnly: this.$store.state.rememberNoteVisibility ? this.$store.state.localOnly : this.$store.state.defaultNoteLocalOnly,
+			remoteFollowersOnly: this.$store.state.rememberNoteVisibility ? this.$store.state.remoteFollowersOnly : this.$store.state.defaultNoteRemoteFollowersOnly,
+			visibility: this.$store.state.rememberNoteVisibility ? this.$store.state.visibility : this.$store.state.defaultNoteVisibility,
+			currentAccount: {} as Record<string, unknown>,
+			accounts: [] as Record<string, unknown>[],
 			useBroadcast: false,
 			broadcastText: '',
 			visibleUsers: [],
@@ -165,6 +169,7 @@ export default defineComponent({
 			draghover: false,
 			quote: null as Record<string, unknown> | null,
 			recentHashtags: JSON.parse(localStorage.getItem('hashtags') || '[]'),
+			imeText: '',
 			postFormActions,
 			faReply, faQuoteRight, faPaperPlane, faTimes, faUpload, faPollH, faGlobe, faHome, faUnlock, faEnvelope, faEyeSlash, faLaughSquint, faPlus, faPhotoVideo, faCloud, faLink, faAt, faHeart, faUsers, faFish, faHeartbeat, faQuestionCircle, faBullhorn, faPlug, faChevronDown, faEllipsisV
 		};
@@ -187,19 +192,19 @@ export default defineComponent({
 
 		placeholder(): string {
 			if (this.quote) {
-				return this.$t('_postForm.quotePlaceholder');
+				return this.$ts._postForm.quotePlaceholder;
 			} else if (this.reply) {
-				return this.$t('_postForm.replyPlaceholder');
+				return this.$ts._postForm.replyPlaceholder;
 			} else if (this.channel) {
-				return this.$t('_postForm.channelPlaceholder');
+				return this.$ts._postForm.channelPlaceholder;
 			} else {
 				const xs = [
-					this.$t('_postForm._placeholders.a'),
-					this.$t('_postForm._placeholders.b'),
-					this.$t('_postForm._placeholders.c'),
-					this.$t('_postForm._placeholders.d'),
-					this.$t('_postForm._placeholders.e'),
-					this.$t('_postForm._placeholders.f')
+					this.$ts._postForm._placeholders.a,
+					this.$ts._postForm._placeholders.b,
+					this.$ts._postForm._placeholders.c,
+					this.$ts._postForm._placeholders.d,
+					this.$ts._postForm._placeholders.e,
+					this.$ts._postForm._placeholders.f
 				];
 				return xs[Math.floor(Math.random() * xs.length)];
 			}
@@ -207,21 +212,25 @@ export default defineComponent({
 
 		submitText(): string {
 			return this.quote
-				? this.$t('quote')
+				? this.$ts.quote
 				: this.reply
-					? this.$t('reply')
-					: this.$t('note');
+					? this.$ts.reply
+					: this.$ts.note;
+		},
+
+		textLength(): number {
+			return length((this.text + this.imeText).trim());
 		},
 
 		canPost(): boolean {
 			return !this.posting &&
-				(1 <= this.text.length || 1 <= this.files.length || this.poll || this.quote) &&
-				(length(this.text.trim()) <= this.max) &&
+				(1 <= this.textLength || 1 <= this.files.length || !!this.poll || !!this.quote) &&
+				(this.textLength <= this.max) &&
 				(!this.poll || this.poll.choices.length >= 2);
 		},
 
 		max(): number {
-			return this.$store.state.instance.meta ? this.$store.state.instance.meta.maxNoteTextLength : 1000;
+			return this.$instance ? this.$instance.maxNoteTextLength : 1000;
 		},
 
 		previewNote() {
@@ -231,20 +240,29 @@ export default defineComponent({
 				text: this.text + (this.useBroadcast ? ' ' + this.broadcastText : ''),
 				cw: this.useCw ? this.cw : undefined,
 				visibility: this.visibility,
-				user: this.$store.state.i,
+				user: this.currentAccount,
 				localOnly: this.localOnly,
 				remoteFollowersOnly: this.remoteFollowersOnly,
 				files: [],
 			};
 		},
 
-		isPreviewOpened: {
-			get() { return this.$store.state.device.showPostPreview },
-			set(value) { this.$store.commit('device/set', { key: 'showPostPreview', value }); }
-		}
+		isPreviewOpened: defaultStore.makeGetterSetter('showPostPreview'),
+
+		currentAccountIsMyself(): boolean {
+			return this.$i.id === this.currentAccount.id;
+		},
 	},
 
 	mounted() {
+		this.currentAccount = this.$i;
+		os.getAccounts().then(accts => {
+			this.accounts = [
+				this.currentAccount,
+				...accts
+			];
+		});
+
 		if (this.initialText) {
 			this.text = this.initialText;
 		}
@@ -269,8 +287,8 @@ export default defineComponent({
 				const mention = x.host ? `@${x.username}@${toASCII(x.host)}` : `@${x.username}`;
 
 				// 自分は除外
-				if (this.$store.state.i.username == x.username && x.host == null) continue;
-				if (this.$store.state.i.username == x.username && x.host == host) continue;
+				if (this.$i.username == x.username && x.host == null) continue;
+				if (this.$i.username == x.username && x.host == host) continue;
 
 				// 重複は除外
 				if (this.text.indexOf(`${mention} `) != -1) continue;
@@ -291,12 +309,12 @@ export default defineComponent({
 			this.visibility = this.reply.visibility;
 			if (this.reply.visibility === 'specified') {
 				os.api('users/show', {
-					userIds: this.reply.visibleUserIds.filter(uid => uid !== this.$store.state.i.id && uid !== this.reply.userId)
+					userIds: this.reply.visibleUserIds.filter(uid => uid !== this.$i.id && uid !== this.reply.userId)
 				}).then(users => {
 					this.visibleUsers.push(...users);
 				});
 
-				if (this.reply.userId !== this.$store.state.i.id) {
+				if (this.reply.userId !== this.$i.id) {
 					os.api('users/show', { userId: this.reply.userId }).then(user => {
 						this.visibleUsers.push(user);
 					});
@@ -310,7 +328,7 @@ export default defineComponent({
 		}
 
 		// keep cw when reply
-		if (this.$store.state.settings.keepCw && this.reply && this.reply.cw) {
+		if (this.$store.state.keepCw && this.reply && this.reply.cw) {
 			this.useCw = true;
 			this.cw = this.reply.cw;
 		}
@@ -408,10 +426,6 @@ export default defineComponent({
 			}
 		},
 
-		trimmedLength(text: string) {
-			return length(text.trim());
-		},
-
 		addTag(tag: string) {
 			this.insert(` #${tag} `);
 		},
@@ -421,23 +435,31 @@ export default defineComponent({
 		},
 
 		chooseFileFrom(ev) {
-			selectFile(ev.currentTarget || ev.target, this.$t('attachFile'), true).then(files => {
+			selectFile(ev.currentTarget || ev.target, this.$ts.attachFile, true).then(files => {
 				for (const file of files) {
 					this.files.push(file);
 				}
 			});
 		},
 
-		detachMedia(id) {
+		detachFile(id) {
 			this.files = this.files.filter(x => x.id != id);
 		},
 
-		updateMedia(file) {
-			this.files[this.files.findIndex(x => x.id === file.id)] = file;
+		updateFiles(files) {
+			this.files = files;
+		},
+
+		updateFileSensitive(file, sensitive) {
+			this.files[this.files.findIndex(x => x.id === file.id)].isSensitive = sensitive;
+		},
+
+		updateFileName(file, name) {
+			this.files[this.files.findIndex(x => x.id === file.id)].name = name;
 		},
 
 		upload(file: File, name?: string) {
-			os.upload(file, this.$store.state.settings.uploadFolder, name).then(res => {
+			os.upload(file, this.$store.state.uploadFolder, name).then(res => {
 				this.files.push(res);
 			});
 		},
@@ -461,20 +483,20 @@ export default defineComponent({
 			}, {
 				changeVisibility: visibility => {
 					this.visibility = visibility;
-					if (this.$store.state.settings.rememberNoteVisibility) {
-						this.$store.commit('deviceUser/setVisibility', visibility);
+					if (this.$store.state.rememberNoteVisibility) {
+						this.$store.set('visibility', visibility);
 					}
 				},
 				changeLocalOnly: localOnly => {
 					this.localOnly = localOnly;
-					if (this.$store.state.settings.rememberNoteVisibility) {
-						this.$store.commit('deviceUser/setLocalOnly', localOnly);
+					if (this.$store.state.rememberNoteVisibility) {
+						this.$store.set('localOnly', localOnly);
 					}
 				},
 				changeRemoteFollowersOnly: remoteFollowersOnly => {
 					this.remoteFollowersOnly = remoteFollowersOnly;
-					if (this.$store.state.settings.rememberNoteVisibility) {
-						this.$store.commit('deviceUser/setRemoteFollowersOnly', remoteFollowersOnly);
+					if (this.$store.state.rememberNoteVisibility) {
+						this.$store.set('remoteFollowersOnly', remoteFollowersOnly);
 					}
 				}
 			}, 'closed');
@@ -504,18 +526,27 @@ export default defineComponent({
 			this.$router.push('/docs/post')
 		},
 
-		onKeydown(e) {
+		onKeydown(e: KeyboardEvent) {
 			if ((e.which === 10 || e.which === 13) && (e.ctrlKey || e.metaKey) && this.canPost) this.post();
 			if (e.which === 27) this.$emit('esc');
 		},
 
+		onCompositionUpdate(e: CompositionEvent) {
+			this.imeText = e.data;
+		},
+
+		onCompositionEnd(e: CompositionEvent) {
+			this.imeText = '';
+		},
+
 		async onPaste(e: ClipboardEvent) {
+			if (!this.currentAccountIsMyself) return;
 			for (const { item, i } of Array.from(e.clipboardData.items).map((item, i) => ({item, i}))) {
 				if (item.kind == 'file') {
 					const file = item.getAsFile();
 					const lio = file.name.lastIndexOf('.');
 					const ext = lio >= 0 ? file.name.slice(lio) : '';
-					const formatted = `${formatTimeString(new Date(file.lastModified), this.$store.state.settings.pastedFileName).replace(/{{number}}/g, `${i + 1}`)}${ext}`;
+					const formatted = `${formatTimeString(new Date(file.lastModified), this.$store.state.pastedFileName).replace(/{{number}}/g, `${i + 1}`)}${ext}`;
 					this.upload(file, formatted);
 				}
 			}
@@ -527,7 +558,7 @@ export default defineComponent({
 
 				os.dialog({
 					type: 'info',
-					text: this.$t('quoteQuestion'),
+					text: this.$ts.quoteQuestion,
 					showCancelButton: true
 				}).then(({ canceled }) => {
 					if (canceled) {
@@ -551,6 +582,12 @@ export default defineComponent({
 		},
 
 		onDragover(e) {
+			if (!this.currentAccountIsMyself) {
+				e.preventDefault();
+				this.draghover = true;
+				e.dataTransfer.dropEffect = 'none';
+				return;
+			};
 			if (!e.dataTransfer.items[0]) return;
 			const isFile = e.dataTransfer.items[0].kind == 'file';
 			const isDriveFile = e.dataTransfer.types[0] == _DATA_TRANSFER_DRIVE_FILE_;
@@ -570,6 +607,7 @@ export default defineComponent({
 		},
 
 		onDrop(e): void {
+			if (!this.currentAccountIsMyself) return;
 			this.draghover = false;
 
 			// ファイルだったら
@@ -627,13 +665,13 @@ export default defineComponent({
 			if (this.reply && this.reply.user.host !== null && this.localOnly) {
 				await os.dialog({
 					type: 'error',
-					text: this.$t('errorLocalOnlyToRemote'),
+					text: this.$ts.errorLocalOnlyToRemote,
 				});
 				return;
 			}
-			const canceled = this.$store.state.device.showNoteConfirm && (await os.dialog({
+			const canceled = this.$store.state.showNoteConfirm && (await os.dialog({
 				type: 'question',
-				text: this.$t('noteConfirm'),
+				text: this.$ts.noteConfirm,
 				showCancelButton: true
 			})).canceled;
 			if (canceled) return;
@@ -660,9 +698,13 @@ export default defineComponent({
 					data = await interruptor.handler(JSON.parse(JSON.stringify(data)));
 				}
 			}
+			// get token
+
+			const token = this.currentAccountIsMyself ? undefined : this.currentAccount.token;
 
 			this.posting = true;
-			os.api('notes/create', data).then(() => {
+			
+			os.api('notes/create', data, token).then(() => {
 				this.clear();
 				this.$nextTick(() => {
 					this.deleteDraft();
@@ -688,7 +730,8 @@ export default defineComponent({
 		},
 
 		insertFace() {
-			this.insert(this.$store.getters['settings/getRandomFace']());
+			const faces = this.$store.state.faces;
+			this.insert(faces.length > 0 ? faces[Math.floor(Math.random() * faces.length)] : '');
 		},
 
 		insertMention() {
@@ -717,13 +760,13 @@ export default defineComponent({
 				desc: {
 					type: 'string',
 					default: '',
-					label: this.$t('description').toString(),
+					label: this.$ts.description.toString(),
 				},
 				noUrlPreview: {
 					type: 'boolean',
 					default: false,
-					label: this.$t('_mfmpad.noUrlPreview').toString(),
-					description: this.$t('_mfmpad.noUrlPreviewDesc').toString(),
+					label: this.$ts._mfmpad.noUrlPreview.toString(),
+					description: this.$ts._mfmpad.noUrlPreviewDesc.toString(),
 				},
 			};
 			const { canceled, result } = await os.form('挿入するリンクの設定', form);
@@ -731,8 +774,14 @@ export default defineComponent({
 			this.insert(`${result.noUrlPreview ? '?' : ''}[${result.desc}](${result.url})`);
 		},
 
-		async mfmPadMenu() {
+		async switchUser(ev) {
+			const accountItems = this.accounts.map(account => ({
+				type: 'user',
+				user: account,
+				action: () => this.currentAccount = account,
+			}));
 
+			os.modalMenu(accountItems, ev.currentTarget || ev.target, { align: 'left' });
 		},
 
 		showActions(ev) {
@@ -945,6 +994,13 @@ export default defineComponent({
 			display: flex;
 			padding: 0 16px;
 			align-items: center;
+
+			> .switch-user {
+				> .avatar {
+					width: 24px;
+					height: 24px;
+				}
+			}
 
 			> button {
 				display: block;

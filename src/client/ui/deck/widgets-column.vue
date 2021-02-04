@@ -1,29 +1,31 @@
 <template>
-<XColumn :menu="menu" :naked="true" :column="column" :is-stacked="isStacked">
+<XColumn :func="{ handler: func, title: $ts.editWidgets }" :naked="true" :column="column" :is-stacked="isStacked">
 	<template #header><Fa :icon="faWindowMaximize" style="margin-right: 8px;"/>{{ column.name }}</template>
 
 	<div class="wtdtxvec">
 		<template v-if="edit">
 			<header>
 				<MkSelect v-model:value="widgetAdderSelected" style="margin-bottom: var(--margin)">
-					<template #label>{{ $t('selectWidget') }}</template>
+					<template #label>{{ $ts.selectWidget }}</template>
 					<option v-for="widget in widgets" :value="widget" :key="widget">{{ $t(`_widgets.${widget}`) }}</option>
 				</MkSelect>
-				<MkButton inline @click="addWidget" primary><Fa :icon="faPlus"/> {{ $t('add') }}</MkButton>
-				<MkButton inline @click="edit = false">{{ $t('close') }}</MkButton>
+				<MkButton inline @click="addWidget" primary><Fa :icon="faPlus"/> {{ $ts.add }}</MkButton>
+				<MkButton inline @click="edit = false">{{ $ts.close }}</MkButton>
 			</header>
 			<XDraggable
-				:list="column.widgets"
+				v-model="_widgets"
+				item-key="id"
 				animation="150"
-				@sort="onWidgetSort"
 			>
-				<div v-for="widget in column.widgets" class="customize-container" :key="widget.id" @click="widgetFunc(widget.id)">
-					<button class="remove _button" @click.prevent.stop="removeWidget(widget)"><Fa :icon="faTimes"/></button>
-					<component :is="`mkw-${widget.name}`" :widget="widget" :setting-callback="setting => settings[widget.id] = setting" :column="column"/>
-				</div>
+				<template #item="{element}">
+					<div class="customize-container" @click="widgetFunc(element.id)">
+						<button class="remove _button" @click.prevent.stop="removeWidget(element)"><Fa :icon="faTimes"/></button>
+						<component :is="`mkw-${element.name}`" :widget="element" :setting-callback="setting => settings[element.id] = setting" :column="column" @updateProps="saveWidget(element.id, $event)"/>
+					</div>
+				</template>
 			</XDraggable>
 		</template>
-		<component v-else class="widget" v-for="widget in column.widgets" :is="`mkw-${widget.name}`" :key="widget.id" :widget="widget" :column="column"/>
+		<component v-else class="widget" v-for="widget in column.widgets" :is="`mkw-${widget.name}`" :key="widget.id" :widget="widget" :column="column" @updateProps="saveWidget(widget.id, $event)"/>
 	</div>
 </XColumn>
 </template>
@@ -36,11 +38,12 @@ import MkSelect from '@/components/ui/select.vue';
 import MkButton from '@/components/ui/button.vue';
 import XColumn from './column.vue';
 import { widgets } from '../../widgets';
+import { addColumnWidget, removeColumnWidget, setColumnWidgets, updateColumnWidget } from './deck-store';
 
 export default defineComponent({
 	components: {
 		XColumn,
-		XDraggable: defineAsyncComponent(() => import('vue-draggable-next').then(x => x.VueDraggableNext)),
+		XDraggable: defineAsyncComponent(() => import('vuedraggable').then(x => x.default)),
 		MkSelect,
 		MkButton,
 	},
@@ -59,7 +62,6 @@ export default defineComponent({
 	data() {
 		return {
 			edit: false,
-			menu: null,
 			widgetAdderSelected: null,
 			widgets,
 			settings: {},
@@ -67,14 +69,15 @@ export default defineComponent({
 		};
 	},
 
-	created() {
-		this.menu = [{
-			icon: faCog,
-			text: this.$t('edit'),
-			action: () => {
-				this.edit = !this.edit;
+	computed: {
+		_widgets: {
+			get() {
+				return this.column.widgets;
+			},
+			set(value) {
+				setColumnWidgets(this.column.id, value);
 			}
-		}];
+		}
 	},
 
 	methods: {
@@ -82,34 +85,28 @@ export default defineComponent({
 			this.settings[id]();
 		},
 
-		onWidgetSort() {
-			this.saveWidgets();
-		},
-
 		addWidget() {
 			if (this.widgetAdderSelected == null) return;
 
-			this.$store.commit('deviceUser/addDeckWidget', {
-				id: this.column.id,
-				widget: {
-					name: this.widgetAdderSelected,
-					id: uuid(),
-					data: {}
-				}
+			addColumnWidget(this.column.id, {
+				name: this.widgetAdderSelected,
+				id: uuid(),
+				data: {}
 			});
 
 			this.widgetAdderSelected = null;
 		},
 
 		removeWidget(widget) {
-			this.$store.commit('deviceUser/removeDeckWidget', {
-				id: this.column.id,
-				widget
-			});
+			removeColumnWidget(this.column.id, widget);
 		},
 
-		saveWidgets() {
-			this.$store.commit('deviceUser/updateDeckColumn', this.column);
+		saveWidget(id, data) {
+			updateColumnWidget(this.column.id, id, data);
+		},
+
+		func() {
+			this.edit = !this.edit;
 		}
 	}
 });
@@ -117,7 +114,9 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .wtdtxvec {
-	padding-top: 1px; // ウィジェットのbox-shadowを利用した1px borderを隠さないようにするため
+	._panel {
+		box-shadow: none;
+	}
 
 	> header {
 		padding: 16px;

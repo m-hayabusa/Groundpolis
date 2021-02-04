@@ -94,6 +94,7 @@ export class UserProfile {
 	})
 	public password: string | null;
 
+	// TODO: そのうち消す
 	@Column('jsonb', {
 		default: {},
 		comment: 'The client-specific data of the User.'
@@ -110,6 +111,12 @@ export class UserProfile {
 		default: false,
 	})
 	public autoAcceptFollowed: boolean;
+
+	@Column('boolean', {
+		default: false,
+		comment: 'Whether reject index by crawler.'
+	})
+	public noCrawle: boolean;
 
 	@Column('boolean', {
 		default: false,

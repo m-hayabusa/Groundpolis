@@ -1,9 +1,9 @@
 <template>
 <div>
-	<MkTab v-model:value="tab" v-if="this.$store.getters.isSignedIn">
-		<option value="featured"><Fa :icon="faFireAlt"/> {{ $t('_pages.featured') }}</option>
-		<option value="my"><Fa :icon="faEdit"/> {{ $t('_pages.my') }}</option>
-		<option value="liked"><Fa :icon="faHeart"/> {{ $t('_pages.liked') }}</option>
+	<MkTab v-model:value="tab" v-if="$i">
+		<option value="featured"><Fa :icon="faFireAlt"/> {{ $ts._pages.featured }}</option>
+		<option value="my"><Fa :icon="faEdit"/> {{ $ts._pages.my }}</option>
+		<option value="liked"><Fa :icon="faHeart"/> {{ $ts._pages.liked }}</option>
 	</MkTab>
 
 	<div class="_section">
@@ -15,14 +15,14 @@
 
 		<div class="rknalgpo _content my" v-if="tab === 'my'">
 			<MkPagination :pagination="myPagesPagination">
-				<template #empty><div class="_emptyinfo">{{ $t('noPages') }}</div></template>
+				<template #empty><div class="_emptyinfo">{{ $ts.noPages }}</div></template>
 				<template #default="{items}"><MkPagePreview v-for="page in items" class="ckltabjg" :page="page" :key="page.id"/></template>
 			</MkPagination>
 		</div>
 
 		<div class="rknalgpo _content" v-if="tab === 'liked'">
 			<MkPagination :pagination="likedPagesPagination">
-				<template #empty><div class="_emptyinfo">{{ $t('noPagesLike') }}</div></template>
+				<template #empty><div class="_emptyinfo">{{ $ts.noPagesLike }}</div></template>
 				<MkPagePreview #default="{items}" v-for="like in items" class="ckltabjg" :page="like.page" :key="like.page.id"/>
 			</MkPagination>
 		</div>
@@ -46,7 +46,7 @@ export default defineComponent({
 	data() {
 		return {
 			INFO: {
-				title: this.$t('pages'),
+				title: this.$ts.pages,
 				icon: faStickyNote,
 				action: {
 					icon: faPlus,

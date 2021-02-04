@@ -1,6 +1,6 @@
 <template>
-<div class="fdidabkb">
-	<transition :name="$store.state.device.animation ? 'header' : ''" mode="out-in" appear>
+<div class="fdidabkb" :style="`--height:${height};`">
+	<transition :name="$store.state.animation ? 'header' : ''" mode="out-in" appear>
 		<button class="_button back" v-if="withBack && canBack" @click.stop="back()"><Fa :icon="faChevronLeft"/></button>
 		<button class="_button menu" v-else-if="withMenuButton" @click.stop="onMenuButtonClicked"><Fa :icon="faBars"/></button>
 	</transition>
@@ -18,8 +18,8 @@
 				<div class="title">
 					<Fa v-if="info.icon" :icon="info.icon" :key="info.icon" class="icon"/>
 					<MkAvatar v-else-if="info.avatar" class="avatar" :user="info.avatar" :disable-preview="true"/>
-					<span v-if="info.title" class="text">{{ info.title }}</span>
-					<MkUserName v-else-if="info.userName" :user="info.userName" :nowrap="false" class="text"/>
+					<MkUserName v-if="info.userName" :user="info.userName" :nowrap="false" class="text"/>
+					<span v-else-if="info.title" class="text">{{ info.title }}</span>
 				</div>
 			</template>
 		</div>
@@ -108,7 +108,7 @@ export default defineComponent({
 });
 </script>
 
-<style lang="scss" scoped vars="{ height }">
+<style lang="scss" scoped>
 .fdidabkb {
 	text-align: center;
 
@@ -207,7 +207,6 @@ export default defineComponent({
 					color: var(--fgHighlighted);
 				}
 			}
-
 			&.selected {
 				box-shadow: 0 -2px 0 0 var(--accent) inset;
 				color: var(--fgHighlighted);

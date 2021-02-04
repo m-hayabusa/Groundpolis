@@ -4,13 +4,13 @@
 
 	<div class="yigymqpb _section">
 		<img :src="emoji.url" class="img"/>
-		<MkInput v-model:value="name"><span>{{ $t('name') }}</span></MkInput>
-		<MkInput v-model:value="category" :datalist="categories"><span>{{ $t('category') }}</span></MkInput>
+		<MkInput v-model:value="name"><span>{{ $ts.name }}</span></MkInput>
+		<MkInput v-model:value="category" :datalist="categories"><span>{{ $ts.category }}</span></MkInput>
 		<MkInput v-model:value="aliases">
-			<span>{{ $t('tags') }}</span>
-			<template #desc>{{ $t('setMultipleBySeparatingWithSpace') }}</template>
+			<span>{{ $ts.tags }}</span>
+			<template #desc>{{ $ts.setMultipleBySeparatingWithSpace }}</template>
 		</MkInput>
-		<MkButton @click="del()"><fa :icon="faTrashAlt"/> {{ $t('delete') }}</MkButton>
+		<MkButton @click="del()"><fa :icon="faTrashAlt"/> {{ $ts.delete }}</MkButton>
 	</div>
 </XWindow>
 </template>
@@ -47,8 +47,8 @@ data() {
 
 	computed: {
 		categories() {
-			if (this.$store.state.instance.meta) {
-				return unique(this.$store.state.instance.meta.emojis.map((x: any) => x.category || '').filter((x: string) => x !== ''));
+			if (this.$instance) {
+				return unique(this.$instance.emojis.map((x: any) => x.category || '').filter((x: string) => x !== ''));
 			} else {
 				return [];
 			}

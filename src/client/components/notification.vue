@@ -3,7 +3,7 @@
 	<div class="head">
 		<MkAvatar v-if="notification.user" class="icon" :user="notification.user"/>
 		<img v-else-if="notification.icon" class="icon" :src="notification.icon" alt=""/>
-		<div class="sub-icon" :class="notification.type">
+		<div class="sub-icon" :class="notification.type !== 'reaction' || !$store.reactiveState.disableReactions.value ? notification.type : 'like'">
 			<Fa :icon="faPlus" v-if="notification.type === 'follow'"/>
 			<Fa :icon="faClock" v-else-if="notification.type === 'receiveFollowRequest'"/>
 			<Fa :icon="faCheck" v-else-if="notification.type === 'followRequestAccepted'"/>
@@ -13,7 +13,10 @@
 			<Fa :icon="faAt" v-else-if="notification.type === 'mention'"/>
 			<Fa :icon="faQuoteLeft" v-else-if="notification.type === 'quote'"/>
 			<Fa :icon="faPollH" v-else-if="notification.type === 'pollVote'"/>
-			<XReactionIcon v-else-if="notification.type === 'reaction'" :reaction="notification.reaction" :custom-emojis="notification.note.emojis" :no-style="true"/>
+			<template v-else-if="notification.type === 'reaction'">
+				<XReactionIcon v-if="!$store.reactiveState.disableReactions.value" :reaction="notification.reaction" :custom-emojis="notification.note.emojis" :no-style="true"/>
+				<Fa v-else :icon="faHeart"/>
+			</template>
 		</div>
 	</div>
 	<div class="tail">
@@ -46,10 +49,28 @@
 			<Mfm :text="getNoteSummary(notification.note)" :plain="true" :nowrap="!full" :custom-emojis="notification.note.emojis"/>
 			<Fa :icon="faQuoteRight"/>
 		</MkA>
-		<span v-if="notification.type === 'follow'" class="text" style="opacity: 0.6;">{{ $t('youGotNewFollower') }}<div v-if="full"><MkFollowButton :user="notification.user" :full="true"/></div></span>
-		<span v-if="notification.type === 'followRequestAccepted'" class="text" style="opacity: 0.6;">{{ $t('followRequestAccepted') }}</span>
-		<span v-if="notification.type === 'receiveFollowRequest'" class="text" style="opacity: 0.6;">{{ $t('receiveFollowRequest') }}<div v-if="full && !followRequestDone"><button class="_textButton" @click="acceptFollowRequest()">{{ $t('accept') }}</button> | <button class="_textButton" @click="rejectFollowRequest()">{{ $t('reject') }}</button></div></span>
-		<span v-if="notification.type === 'groupInvited'" class="text" style="opacity: 0.6;">{{ $t('groupInvited') }}: <b>{{ notification.invitation.group.name }}</b><div v-if="full && !groupInviteDone"><button class="_textButton" @click="acceptGroupInvitation()">{{ $t('accept') }}</button> | <button class="_textButton" @click="rejectGroupInvitation()">{{ $t('reject') }}</button></div></span>
+		<span v-if="notification.type === 'follow'" class="text" style="opacity: 0.6;">
+			{{ $ts.youGotNewFollower }}
+			<div v-if="full">
+				<MkFollowButton :user="notification.user" full disableIfFollowing/>
+			</div>
+		</span>
+		<span v-if="notification.type === 'followRequestAccepted'" class="text" style="opacity: 0.6;">{{ $ts.followRequestAccepted }}</span>
+		<span v-if="notification.type === 'receiveFollowRequest'" class="text" style="opacity: 0.6;">{{ $ts.receiveFollowRequest }}
+			<div v-if="full && !followRequestDone">
+				<button class="_textButton" @click="acceptFollowRequest()">{{ $ts.accept }}</button>
+				|
+				<button class="_textButton" @click="rejectFollowRequest()">{{ $ts.reject }}</button>
+			</div>
+		</span>
+		<span v-if="notification.type === 'groupInvited'" class="text" style="opacity: 0.6;">
+			{{ $ts.groupInvited }}: <b>{{ notification.invitation.group.name }}</b>
+			<div v-if="full && !groupInviteDone">
+				<button class="_textButton" @click="acceptGroupInvitation()">{{ $ts.accept }}</button>
+				|
+				<button class="_textButton" @click="rejectGroupInvitation()">{{ $ts.reject }}</button>
+			</div>
+		</span>
 		<span v-if="notification.type === 'app'" class="text">
 			<Mfm :text="notification.body" :nowrap="!full"/>
 		</span>
@@ -59,15 +80,17 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { faIdCardAlt, faPlus, faQuoteLeft, faQuoteRight, faRetweet, faReply, faAt, faCheck, faPollH } from '@fortawesome/free-solid-svg-icons';
+import { faIdCardAlt, faPlus, faQuoteLeft, faQuoteRight, faRetweet, faReply, faAt, faCheck, faPollH, faHeart } from '@fortawesome/free-solid-svg-icons';
 import { faClock } from '@fortawesome/free-regular-svg-icons';
-import noteSummary from '../../misc/get-note-summary';
+import { getNoteSummary } from '../../misc/get-note-summary';
 import XReactionIcon from './reaction-icon.vue';
 import MkFollowButton from './follow-button.vue';
 import notePage from '../filters/note';
 import { userPage } from '../filters/user';
-import { locale } from '../i18n';
+import { i18n } from '@/i18n';
 import * as os from '@/os';
+
+const locale = i18n.locale;
 
 export default defineComponent({
 	components: {
@@ -92,18 +115,18 @@ export default defineComponent({
 
 	data() {
 		return {
-			getNoteSummary: (text: string) => noteSummary(text, locale),
+			getNoteSummary: (text: string) => getNoteSummary(text, i18n.locale),
 			followRequestDone: false,
 			groupInviteDone: false,
 			connection: null,
 			readObserver: null,
-			faIdCardAlt, faPlus, faQuoteLeft, faQuoteRight, faRetweet, faReply, faAt, faClock, faCheck, faPollH
+			faIdCardAlt, faPlus, faQuoteLeft, faQuoteRight, faRetweet, faReply, faAt, faClock, faCheck, faPollH, faHeart
 		};
 	},
 
 	computed: {
 		isCompactMode(): boolean {
-			return this.$store.state.device.postStyle === 'compact';
+			return this.$store.state.postStyle === 'compact';
 		},
 	},
 
@@ -267,6 +290,11 @@ export default defineComponent({
 			&.pollVote {
 				padding: 3px;
 				background: #88a6b7;
+			}
+
+			&.like {
+				padding: 3px;
+				background: #f06292;
 			}
 		}
 	}

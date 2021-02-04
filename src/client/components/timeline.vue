@@ -1,11 +1,12 @@
 <template>
-<XNotes ref="tl" :pagination="pagination" @before="$emit('before')" @after="e => $emit('after', e)" @queue="$emit('queue', $event)"/>
+<XNotes :class="{ _noGap_: !$store.state.showGapBetweenNotesInTimeline }" ref="tl" :pagination="pagination" @before="$emit('before')" @after="e => $emit('after', e)" @queue="$emit('queue', $event)"/>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
 import XNotes from './notes.vue';
 import * as os from '@/os';
+import * as sound from '@/scripts/sound';
 
 export default defineComponent({
 	components: {
@@ -50,9 +51,9 @@ export default defineComponent({
 			connection2: null,
 			pagination: null,
 			baseQuery: {
-				includeMyRenotes: this.$store.state.settings.showMyRenotes,
-				includeRenotedMyNotes: this.$store.state.settings.showRenotedMyNotes,
-				includeLocalRenotes: this.$store.state.settings.showLocalRenotes
+				includeMyRenotes: this.$store.state.showMyRenotes,
+				includeRenotedMyNotes: this.$store.state.showRenotedMyNotes,
+				includeLocalRenotes: this.$store.state.showLocalRenotes
 			},
 			query: {},
 		};
@@ -65,7 +66,7 @@ export default defineComponent({
 			this.$emit('note');
 
 			if (this.sound) {
-				os.sound(note.userId === this.$store.state.i.id ? 'noteMy' : 'note');
+				sound.play(note.userId === this.$i.id ? 'noteMy' : 'note');
 			}
 		};
 
@@ -103,7 +104,7 @@ export default defineComponent({
 			this.connection2.on('follow', onChangeFollowing);
 			this.connection2.on('unfollow', onChangeFollowing);
 		} else if (this.src == 'local') {
-			const [ ep, con ] = this.$store.state.settings.injectUnlistedNoteInLTL
+			const [ ep, con ] = this.$store.state.injectUnlistedNoteInLTL
 				? [ 'notes/local-hybrid-timeline', 'localHybridTimeline' ]
 				: [ 'notes/local-timeline', 'localTimeline' ];
 			endpoint = ep;
@@ -132,9 +133,20 @@ export default defineComponent({
 			this.connection.on('note', prepend);
 		} else if (this.src == 'mentions') {
 			endpoint = 'notes/mentions';
+			this.connection = os.stream.useSharedConnection('main');
+			this.connection.on('mention', prepend);
 		} else if (this.src == 'direct') {
 			endpoint = 'notes/mentions';
-			this.query = { visibility: 'specified' };
+			this.query = {
+				visibility: 'specified'
+			};
+			const onNote = note => {
+				if (note.visibility == 'specified') {
+					prepend(note);
+				}
+			};
+			this.connection = os.stream.useSharedConnection('main');
+			this.connection.on('mention', onNote);
 		} else if (this.src == 'list') {
 			endpoint = 'notes/user-list-timeline';
 			this.query = {

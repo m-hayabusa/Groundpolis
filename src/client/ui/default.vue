@@ -1,9 +1,9 @@
 <template>
-<div class="mk-app" v-hotkey.global="keymap">
+<div class="mk-app" :class="{ wallpaper }">
 	<XSidebar ref="nav" class="sidebar"/>
 
-	<div class="contents" ref="contents" :class="{ wallpaper }">
-		<header class="header" ref="header" @contextmenu.stop="onContextmenu" @click="onHeaderClick">
+	<div class="contents" ref="contents" :class="{ withHeader: $store.state.titlebar }" @contextmenu.stop="onContextmenu">
+		<header v-if="$store.state.titlebar" class="header" ref="header" @contextmenu.stop="onContextmenu" @click="onHeaderClick">
 			<XHeader main
 				:info="pageInfo"
 				:withWidgetButton="!isDesktop"
@@ -16,7 +16,7 @@
 		<main ref="main">
 			<div class="content">
 				<router-view v-slot="{ Component }">
-					<transition :name="$store.state.device.animation ? 'page' : ''" mode="out-in" @enter="onTransition">
+					<transition :name="$store.state.animation ? 'page' : ''" mode="out-in" @enter="onTransition">
 						<keep-alive :include="['timeline']">
 							<component :is="Component" :ref="changePage"/>
 						</keep-alive>
@@ -45,10 +45,10 @@
 			<Fa :icon="faHashtag"/>
 		</button>
 		<button class="button notifications _button" :class="{ active: $route.name === 'notifications' }" @click="$router.push('/my/notifications')">
-			<Fa :icon="faBell"/><i v-if="$store.state.i.hasUnreadNotification"><Fa :icon="faCircle"/></i>
+			<Fa :icon="faBell"/><i v-if="$i.hasUnreadNotification"><Fa :icon="faCircle"/></i>
 		</button>
 		<button class="button chat _button" :class="{ active: $route.name === 'messaging' }" @click="$router.push('/my/messaging')">
-			<Fa :icon="faComments"/><i v-if="$store.state.i.hasUnreadMessagingMessage"><Fa :icon="faCircle"/></i>
+			<Fa :icon="faComments"/><i v-if="$i.hasUnreadMessagingMessage"><Fa :icon="faCircle"/></i>
 		</button>
 	</div>
 
@@ -75,7 +75,7 @@ import { defineComponent, defineAsyncComponent, markRaw } from 'vue';
 import { faLayerGroup, faBars, faHome, faCircle, faWindowMaximize, faColumns, faHashtag, faPencilAlt } from '@fortawesome/free-solid-svg-icons';
 import { faBell, faComments } from '@fortawesome/free-regular-svg-icons';
 import { host } from '@/config';
-import { search } from '@/scripts/search';
+import { instanceName } from '@/config';
 import { StickySidebar } from '@/scripts/sticky-sidebar';
 import XSidebar from '@/components/sidebar.vue';
 import XCommon from './_common_/common.vue';
@@ -105,8 +105,6 @@ export default defineComponent({
 
 	data() {
 		return {
-			host: host,
-			pageKey: 0,
 			pageInfo: null,
 			isDesktop: window.innerWidth >= DESKTOP_THRESHOLD,
 			menuDef: sidebarDef,
@@ -118,27 +116,6 @@ export default defineComponent({
 	},
 
 	computed: {
-		keymap(): any {
-			return {
-				'd': () => {
-					if (this.$store.state.device.syncDeviceDarkMode) return;
-					this.$store.commit('device/set', { key: 'darkMode', value: !this.$store.state.device.darkMode });
-				},
-				'p': os.post,
-				'n': os.post,
-				's': () => search(),
-				'h|/': this.help
-			};
-		},
-
-		widgets(): any {
-			return this.$store.state.deviceUser.widgets;
-		},
-
-		menu(): string[] {
-			return this.$store.state.deviceUser.menu;
-		},
-
 		navIndicated(): boolean {
 			for (const def in this.menuDef) {
 				if (def === 'notifications') continue; // 通知は下にボタンとして表示されてるから
@@ -152,17 +129,11 @@ export default defineComponent({
 		},
 	},
 
-	watch: {
-		$route(to, from) {
-			this.pageKey++;
-		},
-	},
-
 	created() {
 		document.documentElement.style.overflowY = 'scroll';
 
-		if (this.$store.state.deviceUser.widgets.length === 0) {
-			this.$store.commit('deviceUser/setWidgets', [{
+		if (this.$store.state.widgets.length === 0) {
+			this.$store.set('widgets', [{
 				name: 'calendar',
 				id: 'a', place: 'right', data: {}
 			}, {
@@ -193,6 +164,10 @@ export default defineComponent({
 			if (page == null) return;
 			if (page.INFO) {
 				this.pageInfo = page.INFO;
+				document.title =
+					this.pageInfo.title
+						? `${this.pageInfo.title} | ${instanceName}`
+						: instanceName;
 			}
 		},
 
@@ -201,7 +176,7 @@ export default defineComponent({
 			this.navHidden = navWidth === 0;
 			if (this.$refs.contents == null) return;
 			const width = this.$refs.contents.offsetWidth;
-			this.$refs.header.style.width = `${width}px`;
+			if (this.$refs.header) this.$refs.header.style.width = `${width}px`;
 		},
 
 		showNav() {
@@ -215,12 +190,12 @@ export default defineComponent({
 			}, { passive: true });
 		},
 
-		top() {
-			window.scroll({ top: 0, behavior: 'smooth' });
+		post() {
+			os.post();
 		},
 
-		help() {
-			this.$router.push('/docs/keyboard-shortcut');
+		top() {
+			window.scroll({ top: 0, behavior: 'smooth' });
 		},
 
 		onTransition() {
@@ -232,19 +207,21 @@ export default defineComponent({
 		},
 
 		onContextmenu(e) {
+			if (['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.attributes['contenteditable']) return;
+			if (window.getSelection().toString() !== '') return;
 			const path = this.$route.path;
 			os.contextMenu([{
 				type: 'label',
 				text: path,
 			}, {
 				icon: faColumns,
-				text: this.$t('openInSideView'),
+				text: this.$ts.openInSideView,
 				action: () => {
 					this.$refs.side.navigate(path);
 				}
 			}, {
 				icon: faWindowMaximize,
-				text: this.$t('openInWindow'),
+				text: this.$ts.openInWindow,
 				action: () => {
 					os.pageWindow(path);
 				}
@@ -293,17 +270,19 @@ export default defineComponent({
 	// ほんとは単に 100vh と書きたいところだが... https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
 	min-height: calc(var(--vh, 1vh) * 100);
 	box-sizing: border-box;
-
 	display: flex;
+
+	&.wallpaper {
+		background: var(--wallpaperOverlay);
+		//backdrop-filter: blur(4px);
+	}
 
 	> .contents {
 		width: 100%;
 		min-width: 0;
-		padding-top: $header-height;
 
-		&.wallpaper {
-			background: var(--wallpaperOverlay);
-			//backdrop-filter: blur(4px);
+		&.withHeader {
+			padding-top: $header-height;
 		}
 
 		> .header {
@@ -319,7 +298,7 @@ export default defineComponent({
 			-webkit-backdrop-filter: blur(32px);
 			backdrop-filter: blur(32px);
 			background-color: var(--header);
-			border-bottom: solid 1px var(--divider);
+			//border-bottom: solid 1px var(--divider);
 			user-select: none;
 		}
 
@@ -385,15 +364,13 @@ export default defineComponent({
 		position: fixed;
 		z-index: 1000;
 		bottom: 0;
-		padding: 0 32px 32px 32px;
+		padding: 16px;
 		display: flex;
 		width: 100%;
 		box-sizing: border-box;
-		background: linear-gradient(0deg, var(--bg), var(--X1));
-
-		@media (max-width: 500px) {
-			padding: 0 16px 16px 16px;
-		}
+		-webkit-backdrop-filter: blur(32px);
+		backdrop-filter: blur(32px);
+		background-color: var(--header);
 
 		&:not(.navHidden) {
 			display: none;
@@ -401,14 +378,25 @@ export default defineComponent({
 
 		> .button {
 			position: relative;
+			flex: 1;
 			padding: 0;
 			margin: auto;
-			width: 64px;
 			height: 64px;
-			border-radius: 100%;
-			box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2), 0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+			border-radius: 8px;
 			background: var(--panel);
 			color: var(--fg);
+
+			&:not(:last-child) {
+				margin-right: 12px;
+			}
+
+			@media (max-width: 400px) {
+				height: 60px;
+
+				&:not(:last-child) {
+					margin-right: 8px;
+				}
+			}
 
 			&:hover {
 				background: var(--X2);

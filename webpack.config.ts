@@ -37,7 +37,7 @@ const postcss = {
 module.exports = {
 	entry: {
 		app: './src/client/init.ts',
-		sw: './src/client/sw.ts'
+		sw: './src/client/sw/sw.ts'
 	},
 	module: {
 		rules: [{
@@ -141,7 +141,6 @@ module.exports = {
 			_DATA_TRANSFER_DECK_COLUMN_: JSON.stringify('mk_deck_column'),
 			__VUE_OPTIONS_API__: true,
 			__VUE_PROD_DEVTOOLS__: false,
-			__VUE_I18N_LEGACY_API__: false,
 		}),
 		new VueLoaderPlugin(),
 		new WebpackOnBuildPlugin((stats: any) => {
@@ -151,7 +150,8 @@ module.exports = {
 	output: {
 		path: __dirname + '/built/client/assets',
 		filename: `[name].${meta.version}.js`,
-		publicPath: '/assets/'
+		publicPath: `/assets/`,
+		pathinfo: false,
 	},
 	resolve: {
 		extensions: [
@@ -165,14 +165,14 @@ module.exports = {
 	resolveLoader: {
 		modules: ['node_modules']
 	},
-	optimization: {
-		minimizer: [new TerserPlugin({
-			parallel: 1,
-		})],
-	},
-	cache: true,
+	cache: !isProduction,
 	experiments: {
 		topLevelAwait: true
+	},
+	optimization: {
+		minimizer: [new TerserPlugin({
+			parallel: 1
+		})]
 	},
 	devtool: false, //'source-map',
 	mode: isProduction ? 'production' : 'development'

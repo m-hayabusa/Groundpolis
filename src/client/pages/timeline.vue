@@ -1,10 +1,10 @@
 <template>
 <div class="mk-home" v-hotkey.global="keymap">
-	<div class="new" v-if="queue > 0" :style="{ width: width + 'px' }"><button class="_buttonPrimary" @click="top()">{{ $t('newNoteRecived') }}</button></div>
+	<div class="new" v-if="queue > 0" :style="{ width: width + 'px' }"><button class="_buttonPrimary" @click="top()">{{ $ts.newNoteRecived }}</button></div>
 
 	<div class="_section">
-		<XTutorial v-if="$store.state.settings.tutorial != -1" class="tutorial _content _vMargin"/>
-		<XPostForm v-if="$store.state.device.showFixedPostForm" class="post-form _panel _content _vMargin" fixed/>
+		<XTutorial v-if="$store.reactiveState.tutorial.value != -1" class="tutorial _content _vMargin"/>
+		<XPostForm v-if="$store.reactiveState.showFixedPostForm.value" class="post-form _panel _content _vMargin" fixed/>
 		<XTimeline ref="tl"
 			class="_content _vMargin"
 			:key="src === 'list' ? `list:${list.id}` : src === 'antenna' ? `antenna:${antenna.id}` : src === 'channel' ? `channel:${channel.id}` : src"
@@ -23,23 +23,21 @@
 
 <script lang="ts">
 import { defineComponent, defineAsyncComponent, computed, ComputedRef } from 'vue';
-import { faAngleDown, faAngleUp, faHome, faShareAlt, faGlobe, faListUl, faSatellite, faSatelliteDish, faCircle, faEllipsisH, faPencilAlt, faBullhorn, faCat, faProjectDiagram, faCommentAlt, faAt } from '@fortawesome/free-solid-svg-icons';
-import { faComments, faEnvelope } from '@fortawesome/free-regular-svg-icons';
+import { faAngleDown, faAngleUp, faHome, faShareAlt, faGlobe, faListUl, faSatellite, faSatelliteDish, faCircle, faEllipsisH, faPencilAlt, faBullhorn } from '@fortawesome/free-solid-svg-icons';
+import { faComments } from '@fortawesome/free-regular-svg-icons';
 import Progress from '@/scripts/loading';
 import XTimeline from '@/components/timeline.vue';
 import XPostForm from '@/components/post-form.vue';
 import { scroll } from '@/scripts/scroll';
 import * as os from '@/os';
-
+import { timelineMenuItems, timelineMenuMap } from '../menus/timeline';
 export default defineComponent({
 	name: 'timeline',
-
 	components: {
 		XTimeline,
 		XTutorial: defineAsyncComponent(() => import('./timeline.tutorial.vue')),
 		XPostForm,
 	},
-
 	data() {
 		return {
 			src: 'home',
@@ -58,60 +56,37 @@ export default defineComponent({
 					tooltip?: string | null,
 					icon?: any,
 					onClick?: () => void,
-					selected?: ComputedRef<boolean>,
-					indicate?: ComputedRef<boolean>,
+					selected?: ComputedRef<boolean> | boolean,
+					indicate?: ComputedRef<boolean> | boolean,
 				};
-				const tabs: Tab[] = [{
-					id: 'home',
-					tooltip: this.$t('_timelines.home'),
-					icon: faHome,
-					onClick: () => { this.src = 'home'; this.saveSrc(); },
-					selected: computed(() => this.src === 'home'),
-				}];
-
-				const isMod = this.$store.state.i.isModerator || this.$store.state.i.isAdmin;
-				const withLTL = !this.$store.state.instance.meta.disableLocalTimeline || isMod;
-				const withGTL = !this.$store.state.instance.meta.disableGlobalTimeline || isMod;
-
-				if (withLTL) {
+				const tabs: Tab[] = [];
+				for (const item of (this.$store.state.timelineTabItems as []).map(src => timelineMenuItems.find(it => it.src === src))) {
+					if (!item) continue;
+					if (item.show && !item.show()) continue;
 					tabs.push({
-						id: 'local',
+						id: item.src,
 						title: null,
-						tooltip: this.$t('_timelines.local'),
-						icon: faComments,
-						onClick: () => { this.src = 'local'; this.saveSrc(); },
-						selected: computed(() => this.src === 'local')
-					});
-
-					tabs.push({
-						id: 'social',
-						title: null,
-						tooltip: this.$t('_timelines.social'),
-						icon: faShareAlt,
-						onClick: () => { this.src = 'social'; this.saveSrc(); },
-						selected: computed(() => this.src === 'social')
+						tooltip: item.name,
+						icon: item.icon,
+						onClick: () => { this.src = item.src; this.saveSrc(); },
+						selected: computed(() => this.src === item.src),
 					});
 				}
-
-				if (withGTL) {
+				if (!this.$store.state.timelineTabItems.includes(this.src)) {
 					tabs.push({
-						id: 'global',
+						id: this.src,
 						title: null,
-						tooltip: this.$t('_timelines.global'),
-						icon: faGlobe,
-						onClick: () => { this.src = 'global'; this.saveSrc(); },
-						selected: computed(() => this.src === 'global')
+						icon: this.src === 'antenna' ? faSatellite : this.src === 'list' ? faListUl : timelineMenuMap[this.src] ? timelineMenuMap[this.src].icon : null,
+						selected: true,
 					});
 				}
-
 				tabs.push({
 					id: 'other',
 					title: null,
 					icon: faEllipsisH,
 					onClick: this.choose,
-					indicate: computed(() => this.$store.state.i.hasUnreadAntenna || this.$store.state.i.hasUnreadChannel)
+					indicate: computed(() => this.$i.hasUnreadAntenna || this.$i.hasUnreadChannel)
 				});
-
 				if (this.announcements.length > 0) {
 					tabs.push({
 						id: 'announcements',
@@ -128,7 +103,6 @@ export default defineComponent({
 										return newA;
 									});
 									this.hasUnreadAnnouncements = this.announcements.some(a => !a.isRead);
-
 									os.api('i/read-announcement', { announcementId: ann.id })
 								},
 							}, 'closed');
@@ -136,31 +110,28 @@ export default defineComponent({
 						indicate: computed(() => this.hasUnreadAnnouncements)
 					});
 				};
-
 				return {
+					title: this.$ts.timeline,
 					tabs,
 					action: {
 						icon: faPencilAlt,
-						handler: () => os.post()
+						handler: () => os.post(),
 					}
 				};
 			}),
 			faAngleDown, faAngleUp, faHome, faShareAlt, faGlobe, faComments, faListUl, faSatellite, faSatelliteDish, faCircle
 		};
 	},
-
 	computed: {
 		keymap(): any {
 			return {
 				't': this.focus
 			};
 		},
-
 		meta() {
-			return this.$store.state.instance.meta;
+			return this.$instance;
 		},
 	},
-
 	watch: {
 		src() {
 			this.showNav = false;
@@ -181,53 +152,41 @@ export default defineComponent({
 			if (x != null) this.list = null;
 		},
 	},
-
 	created() {
-		this.src = this.$store.state.deviceUser.tl.src;
+		this.src = this.$store.state.tl.src;
 		if (this.src === 'list') {
-			this.list = this.$store.state.deviceUser.tl.arg;
+			this.list = this.$store.state.tl.arg;
 		} else if (this.src === 'antenna') {
-			this.antenna = this.$store.state.deviceUser.tl.arg;
+			this.antenna = this.$store.state.tl.arg;
 		} else if (this.src === 'channel') {
-			this.channel = this.$store.state.deviceUser.tl.arg;
+			this.channel = this.$store.state.tl.arg;
 		}
 	},
-
 	mounted() {
 		this.width = this.$el.offsetWidth;
 	},
-
 	async activated() {
 		this.announcements = (await os.api('announcements', {
 			limit: 100,
 		}));
 		this.hasUnreadAnnouncements = this.announcements.some(a => !a.isRead);
 	},
-
 	methods: {
 		before() {
 			Progress.start();
 		},
-
 		after() {
 			Progress.done();
 		},
-
 		queueUpdated(q) {
 			if (this.$el.offsetWidth !== 0) this.width = this.$el.offsetWidth;
 			this.queue = q;
 		},
-
 		top() {
 			scroll(this.$el, 0);
 		},
-
 		async choose(ev) {
 			if (this.meta == null) return;
-
-			const isMod = this.$store.state.i.isModerator || this.$store.state.i.isAdmin;
-			const withCTL = !this.$store.state.instance.meta.disableCatTimeline || isMod;
-
 			const antennaPromise = os.api('antennas/list').then((antennas: any[]) => antennas.length === 0 ? [] : [null, ...antennas.map(antenna => ({
 				text: antenna.name,
 				icon: faSatellite,
@@ -259,57 +218,22 @@ export default defineComponent({
 					this.$router.push(`/channels/${channel.id}`);
 				}
 			}))]);
-
+			const timelines = timelineMenuItems
+				.filter(it => !(this.$store.state.timelineTabItems as string[]).includes(it.src))
+				.map(it => ({
+					text: it.name,
+					icon: it.icon,
+					action: () => { this.src = it.src; this.saveSrc(); },
+				}));
 			os.modalMenu([
-				(withCTL ? {
-					text: this.$t('_timelines.cat'),
-					icon: faCat,
-					action: () => {
-						this.src = 'cat';
-						this.saveSrc();
-					}
-				} : undefined),
-				{
-					text: this.$t('_timelines.remoteFollowing'),
-					icon: faProjectDiagram,
-					action: () => {
-						this.src = 'remoteFollowing';
-						this.saveSrc();
-					}
-				},
-				{
-					text: this.$t('_timelines.followers'),
-					icon: faCommentAlt,
-					action: () => {
-						this.src = 'followers';
-						this.saveSrc();
-					}
-				},
-				null,
-				{
-					text: this.$t('mentions'),
-					icon: faAt,
-					action: () => {
-						this.src = 'mentions';
-						this.saveSrc();
-					}
-				},
-				{
-					text: this.$t('directNotes'),
-					icon: faEnvelope,
-					action: () => {
-						this.src = 'direct';
-						this.saveSrc();
-					}
-				},
+				timelines,
 				antennaPromise,
 				listPromise,
 				channelPromise,
 				], ev.currentTarget || ev.target);
 		},
-
 		saveSrc() {
-			this.$store.commit('deviceUser/setTl', {
+			this.$store.set('tl', {
 				src: this.src,
 				arg:
 					this.src === 'list' ? this.list :
@@ -317,7 +241,6 @@ export default defineComponent({
 					this.channel
 			});
 		},
-
 		focus() {
 			(this.$refs.tl as any).focus();
 		}
@@ -330,7 +253,6 @@ export default defineComponent({
 	> .new {
 		position: fixed;
 		z-index: 1000;
-
 		> button {
 			display: block;
 			margin: var(--margin) auto 0 auto;
@@ -338,9 +260,7 @@ export default defineComponent({
 			border-radius: 32px;
 		}
 	}
-
 	> ._section {
-
 	}
 }
 </style>

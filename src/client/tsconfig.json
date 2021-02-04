@@ -15,7 +15,7 @@
 		"removeComments": false,
 		"noLib": false,
 		"strict": true,
-		"strictNullChecks": false,
+		"strictNullChecks": true,
 		"experimentalDecorators": true,
 		"resolveJsonModule": true,
 		"baseUrl": ".",
@@ -37,7 +37,6 @@
 	},
 	"compileOnSave": false,
 	"include": [
-		"./**/*.ts",
-		"./**/*.vue"
+		"./**/*.ts"
 	]
 }

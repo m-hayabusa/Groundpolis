@@ -1,9 +1,9 @@
 <template>
 <div class="_section">
 	<div v-if="hideFF === null" />
-	<section v-else-if="hideFF" class="_card">
+	<section v-else-if="hideFF" class="_section">
 		<div class="_content">
-			{{ $t('thisInformationIsNotAvailable') }}
+			{{ $ts.thisInformationIsNotAvailable }}
 		</div>
 	</section>
 	<MkPagination v-else :pagination="pagination" #default="{items}" class="mk-following-or-followers _content" ref="list">
@@ -61,7 +61,7 @@ export default defineComponent({
 	},
 
 	async mounted() {
-		const i = this.$store.state.i;
+		const i = this.$i;
 		if (i.username === this.user.username && i.host === this.user.host) {
 			// 自分自身であれば隠さない
 			this.hideFF = false;

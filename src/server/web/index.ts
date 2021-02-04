@@ -17,9 +17,9 @@ import packFeed from './feed';
 import { fetchMeta } from '../../misc/fetch-meta';
 import { genOpenapiSpec } from '../api/openapi/gen-spec';
 import config from '../../config';
-import { Users, Notes, Emojis, UserProfiles, Pages, Channels, Clips } from '../../models';
+import { Users, Notes, Emojis, UserProfiles, Pages, Channels, Clips, UsedUsernames } from '../../models';
 import parseAcct from '../../misc/acct/parse';
-import getNoteSummary from '../../misc/get-note-summary';
+import { getNoteSummary } from '../../misc/get-note-summary';
 import { ensure } from '../../prelude/ensure';
 import { getConnection } from 'typeorm';
 import redis from '../../db/redis';
@@ -119,7 +119,7 @@ router.get('/docs.json', async ctx => {
 		ctx.body = [];
 		return;
 	}
-	const paths = glob.sync(__dirname + `/../../../src/docs/*.${lang}.md`);
+	const paths = glob.sync(__dirname + `/../../../src/docs/${lang}/*.md`);
 	const docs: { path: string; title: string; }[] = [];
 	for (const path of paths) {
 		const md = fs.readFileSync(path, { encoding: 'utf8' });
@@ -226,6 +226,10 @@ router.get(['/@:user', '/@:user/:sub'], async (ctx, next) => {
 			icon: meta.iconUrl
 		});
 		setCache(ctx, 'public, max-age=30');
+	} else if (!host) { 
+		const isExisted = await UsedUsernames.count({ username: username.toLowerCase() });
+		ctx.status = isExisted > 0 ? 410 : 404;
+		return;
 	} else {
 		// リモートユーザーなので
 		// モデレータがAPI経由で参照可能にするために404にはしない
@@ -254,9 +258,11 @@ router.get('/notes/:note', async ctx => {
 
 	if (note) {
 		const _note = await Notes.pack(note);
+		const profile = await UserProfiles.findOne(note.userId).then(ensure);
 		const meta = await fetchMeta();
 		await ctx.render('note', {
 			note: _note,
+			profile,
 			// TODO: Let locale changeable by instance setting
 			summary: getNoteSummary(_note, locales['ja-JP']),
 			instanceName: meta.name || 'Groundpolis',
@@ -292,9 +298,11 @@ router.get('/@:user/pages/:page', async ctx => {
 
 	if (page) {
 		const _page = await Pages.pack(page);
+		const profile = await UserProfiles.findOne(page.userId).then(ensure);
 		const meta = await fetchMeta();
 		await ctx.render('page', {
 			page: _page,
+			profile,
 			instanceName: meta.name || 'Groundpolis'
 		});
 
@@ -319,9 +327,11 @@ router.get('/clips/:clip', async ctx => {
 
 	if (clip) {
 		const _clip = await Clips.pack(clip);
+		const profile = await UserProfiles.findOne(clip.userId).then(ensure);
 		const meta = await fetchMeta();
 		await ctx.render('clip', {
 			clip: _clip,
+			profile,
 			instanceName: meta.name || 'Misskey'
 		});
 
@@ -399,17 +409,33 @@ router.get('/streaming', async ctx => {
 	ctx.set('Cache-Control', 'private, max-age=0');
 });
 
-// Render base html for all requests
-router.get('(.*)', async ctx => {
+const renderBase = async (ctx: Koa.Context) => {
 	const meta = await fetchMeta();
 	await ctx.render('base', {
 		img: meta.bannerUrl,
 		title: meta.name || 'Groundpolis',
 		instanceName: meta.name || 'Groundpolis',
 		desc: meta.description,
-		icon: meta.iconUrl
+		icon: meta.iconUrl,
+		status: ctx.status,
 	});
+}
+
+// Render base html for all requests
+router.get('(.*)', async ctx => {
+	await renderBase(ctx);
 	setCache(ctx, 'public, max-age=300');
+});
+
+app.use(async (ctx, next) => {
+	try {
+		await next();
+		if (ctx.status === 404) {
+			await renderBase(ctx);
+		}
+	} catch (err) {
+		await renderBase(ctx);
+	}
 });
 
 // Register router

@@ -2,7 +2,7 @@
 <div class="_section qtcaoidl">
 	<div class="_content">
 		<MkPagination :pagination="pagination" ref="list" class="list">
-			<template #empty><div class="_emptyinfo">{{ $t('noClips') }}</div></template>
+			<template #empty><div class="_emptyinfo">{{ $ts.noClips }}</div></template>
 			<template #default="{items}">
 				<MkA v-for="item in items" :key="item.id" :to="`/clips/${item.id}`" class="item _panel _vMargin">
 					<b>{{ item.name }}</b>
@@ -30,7 +30,7 @@ export default defineComponent({
 	data() {
 		return {
 			INFO: {
-				title: this.$t('clip'),
+				title: this.$ts.clip,
 				icon: faPaperclip,
 				action: {
 					icon: faPlus,
@@ -48,20 +48,20 @@ export default defineComponent({
 
 	methods: {
 		async create() {
-			const { canceled, result } = await os.form(this.$t('createNewClip'), {
+			const { canceled, result } = await os.form(this.$ts.createNewClip, {
 				name: {
 					type: 'string',
-					label: this.$t('name')
+					label: this.$ts.name
 				},
 				description: {
 					type: 'string',
 					required: false,
 					multiline: true,
-					label: this.$t('description')
+					label: this.$ts.description
 				},
 				isPublic: {
 					type: 'boolean',
-					label: this.$t('public'),
+					label: this.$ts.public,
 					default: false
 				}
 			});

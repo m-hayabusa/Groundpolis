@@ -1,139 +1,137 @@
 import { Component, defineAsyncComponent } from 'vue';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 
-import { faPalette, faPlug, faUser, faListUl, faLock, faMusic, faCogs, faEllipsisH, faBan, faShareAlt, faLockOpen, faKey, faBoxes, faFlask, faFish, faCommentSlash, faMagic, faColumns } from '@fortawesome/free-solid-svg-icons';
+import { faPalette, faPlug, faUser, faListUl, faLock, faMusic, faCogs, faEllipsisH, faBan, faShareAlt, faLockOpen, faKey, faBoxes, faFlask, faFish, faCommentSlash, faMagic, faColumns, faStream, faDownload, faFolderOpen, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { faLaugh, faBell } from '@fortawesome/free-regular-svg-icons';
+import { faCss3Alt } from '@fortawesome/free-brands-svg-icons';
 
 import { i18n } from '@/i18n';
 
 export type PageDefinition = {
 	component: () => Component,
-	name: string,
-	type: 'basic' | 'client' | 'other',
-	title: string,
-	icon: IconProp,
-};
+	type: 'basic' | 'client' | 'other' | 'hidden',
+	title?: string,
+	icon?: IconProp,
+} & ({ name: string } | {pattern: RegExp});
 
-const t = i18n.global.t;
+const ts = i18n.locale;
 export const pages: PageDefinition[] = [
 	{
 		name: 'profile',
 		icon: faUser,
-		title: t('profile'),
+		title: ts.profile,
 		type: 'basic',
 		component: () => defineAsyncComponent(() => import('./profile.vue')),
 	},
 	{
 		name: 'privacy',
 		icon: faLockOpen,
-		title: t('privacy'),
+		title: ts.privacy,
 		type: 'basic',
 		component: () => defineAsyncComponent(() => import('./privacy.vue')),
 	},
 	{
 		name: 'reaciton',
 		icon: faLaugh,
-		title: t('reaction'),
+		title: ts.reaction,
 		type: 'basic',
 		component: () => defineAsyncComponent(() => import('./reaction.vue')),
 	},
 	{
 		name: 'notifications',
 		icon: faBell,
-		title: t('notifications'),
+		title: ts.notifications,
 		type: 'basic',
 		component: () => defineAsyncComponent(() => import('./notifications.vue')),
 	},
 	{
+		name: 'email',
+		icon: faUser,
+		title: ts.email,
+		type: 'basic',
+		component: () => defineAsyncComponent(() => import('./email.vue')),
+	},
+	{
 		name: 'integration',
 		icon: faShareAlt,
-		title: t('integration'),
+		title: ts.integration,
 		type: 'basic',
 		component: () => defineAsyncComponent(() => import('./integration.vue')),
 	},
 	{
 		name: 'security',
 		icon: faLock,
-		title: t('security'),
+		title: ts.security,
 		type: 'basic',
 		component: () => defineAsyncComponent(() => import('./security.vue')),
 	},
-
 	{
-		name: 'behavior',
+		name: 'general',
 		icon: faCogs,
-		title: t('behavior'),
+		title: ts.general,
 		type: 'client',
 		component: () => defineAsyncComponent(() => import('./general.vue')),
 	},
 	{
-		name: 'appearance',
-		icon: faMagic,
-		title: t('appearance'),
+		name: 'timeline',
+		icon: faStream,
+		title: ts.timeline,
 		type: 'client',
-		component: () => defineAsyncComponent(() => import('./appearance.vue')),
-	},
-	{
-		name: 'deck',
-		icon: faColumns,
-		title: t('deck'),
-		type: 'client',
-		component: () => defineAsyncComponent(() => import('./deck.vue')),
+		component: () => defineAsyncComponent(() => import('./timeline.vue')),
 	},
 	{
 		name: 'theme',
 		icon: faPalette,
-		title: t('theme'),
+		title: ts.theme,
 		type: 'client',
 		component: () => defineAsyncComponent(() => import('./theme.vue')),
 	},
 	{
 		name: 'sidebar',
 		icon: faListUl,
-		title: t('sidebar'),
+		title: ts.sidebar,
 		type: 'client',
 		component: () => defineAsyncComponent(() => import('./sidebar.vue')),
 	},
 	{
 		name: 'sounds',
 		icon: faMusic,
-		title: t('sounds'),
+		title: ts.sounds,
 		type: 'client',
 		component: () => defineAsyncComponent(() => import('./sounds.vue')),
 	},
 	{
 		name: 'plugins',
 		icon: faPlug,
-		title: t('plugins'),
+		title: ts.plugins,
 		type: 'client',
 		component: () => defineAsyncComponent(() => import('./plugins.vue')),
 	},
 	{
 		name: 'gacha',
 		icon: faFish,
-		title: t('gacha'),
+		title: ts.gacha,
 		type: 'client',
 		component: () => defineAsyncComponent(() => import('./gacha.vue')),
 	},
-
 	{
 		name: 'import-export',
 		icon: faBoxes,
-		title: t('importAndExport'),
+		title: ts.importAndExport,
 		type: 'other',
 		component: () => defineAsyncComponent(() => import('./import-export.vue')),
 	},
 	{
 		name: 'mute-block',
 		icon: faBan,
-		title: t('muteAndBlock'),
+		title: ts.muteAndBlock,
 		type: 'other',
 		component: () => defineAsyncComponent(() => import('./mute-block.vue')),
 	},
 	{
 		name: 'word-mute',
 		icon: faCommentSlash,
-		title: t('wordMute'),
+		title: ts.wordMute,
 		type: 'other',
 		component: () => defineAsyncComponent(() => import('./word-mute.vue')),
 	},
@@ -147,15 +145,97 @@ export const pages: PageDefinition[] = [
 	{
 		name: 'labs',
 		icon: faFlask,
-		title: t('_labs.title'),
+		title: ts._labs.title,
 		type: 'other',
 		component: () => defineAsyncComponent(() => import('./labs.vue')),
 	},
 	{
 		name: 'other',
 		icon: faEllipsisH,
-		title: t('other'),
+		title: ts.other,
 		type: 'other',
 		component: () => defineAsyncComponent(() => import('./other.vue')),
 	},
+	{
+		name: 'email/address',
+		type: 'hidden',
+		component: () => defineAsyncComponent(() => import('./email-address.vue')),
+	},
+	{
+		name: '2fa',
+		type: 'hidden',
+		title: ts.twoStepAuthentication,
+		icon: faLock,
+		component: () => defineAsyncComponent(() => import('./2fa.vue')),
+	},
+	{
+		name: 'theme/install',
+		type: 'hidden',
+		title: ts._theme.install,
+		icon: faDownload,
+		component: () => defineAsyncComponent(() => import('./theme.install.vue')),
+	},
+	{
+		name: 'theme/manage',
+		type: 'hidden',
+		title: ts._theme.manage,
+		icon: faFolderOpen,
+		component: () => defineAsyncComponent(() => import('./theme.manage.vue')),
+	},
+	{
+		name: 'account-info',
+		type: 'hidden',
+		title: ts.accountInfo,
+		icon: faInfoCircle,
+		component: () => defineAsyncComponent(() => import('./account-info.vue')),
+	},
+	{
+		name: 'deck',
+		type: 'hidden',
+		title: ts.deck,
+		icon: faColumns,
+		component: () => defineAsyncComponent(() => import('./deck.vue')),
+	},
+	{
+		name: 'apps',
+		type: 'hidden',
+		title: ts.installedApps,
+		icon: faPlug,
+		component: () => defineAsyncComponent(() => import('./apps.vue')),
+	},
+	{
+		name: 'labs/custom-css',
+		type: 'hidden',
+		title: ts._labs.customCss,
+		icon: faCss3Alt,
+		component: () => defineAsyncComponent(() => import('./labs.custom-css.vue')),
+	},
+	{
+		name: 'registry',
+		type: 'hidden',
+		title: ts.registry,
+		icon: faCogs,
+		component: () => defineAsyncComponent(() => import('./registry.vue')),
+	},
+	{
+		pattern: /^registry\/keys\/system\//,
+		type: 'hidden',
+		title: ts.registry,
+		icon: faCogs,
+		component: () => defineAsyncComponent(() => import('./registry.keys.vue'))
+	},
+	{
+		pattern: /^registry\/value\/system\//,
+		type: 'hidden',
+		title: ts.registry,
+		icon: faCogs,
+		component: () => defineAsyncComponent(() => import('./registry.value.vue'))
+	},
+	{
+		name: 'experimental-features',
+		type: 'hidden',
+		title: ts.experimentalFeatures,
+		icon: faFlask,
+		component: () => defineAsyncComponent(() => import('./experimental-features.vue'))
+	}
 ];

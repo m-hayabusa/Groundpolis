@@ -1,29 +1,33 @@
 <template>
+<span v-if="disableIfFollowing && isFollowing">
+	{{ $ts.following2 }}
+</span>
 <button class="kpoogebi _button"
-	:class="{ wait, active: isFollowing || hasPendingFollowRequestFromYou, full }"
+	:class="{ wait, active: isFollowing || hasPendingFollowRequestFromYou, full, large }"
 	@click="onClick"
 	:disabled="wait"
-	v-if="isFollowing != null"
+	v-else
+	v-cloak
 >
 	<template v-if="!wait">
 		<template v-if="hasPendingFollowRequestFromYou && user.isLocked">
-			<span v-if="full">{{ $t('followRequestPending') }}</span><Fa :icon="faHourglassHalf"/>
+			<span v-if="full">{{ $ts.followRequestPending }}</span><Fa :icon="faHourglassHalf"/>
 		</template>
 		<template v-else-if="hasPendingFollowRequestFromYou && !user.isLocked"> <!-- つまりリモートフォローの場合。 -->
-			<span v-if="full">{{ $t('processing') }}</span><Fa :icon="faSpinner" pulse/>
+			<span v-if="full">{{ $ts.processing }}</span><Fa :icon="faSpinner" pulse/>
 		</template>
 		<template v-else-if="isFollowing">
-			<span v-if="full">{{ $t('unfollow') }}</span><Fa :icon="faMinus"/>
+			<span v-if="full">{{ $ts.unfollow }}</span><Fa :icon="faMinus"/>
 		</template>
 		<template v-else-if="!isFollowing && user.isLocked">
-			<span v-if="full">{{ $t('followRequest') }}</span><Fa :icon="faPlus"/>
+			<span v-if="full">{{ $ts.followRequest }}</span><Fa :icon="faPlus"/>
 		</template>
 		<template v-else-if="!isFollowing && !user.isLocked">
-			<span v-if="full">{{ $t('follow') }}</span><Fa :icon="faPlus"/>
+			<span v-if="full">{{ $ts.follow }}</span><Fa :icon="faPlus"/>
 		</template>
 	</template>
 	<template v-else>
-		<span v-if="full">{{ $t('processing') }}</span><Fa :icon="faSpinner" pulse fixed-width/>
+		<span v-if="full">{{ $ts.processing }}</span><Fa :icon="faSpinner" pulse fixed-width/>
 	</template>
 </button>
 </template>
@@ -40,6 +44,16 @@ export default defineComponent({
 			required: true
 		},
 		full: {
+			type: Boolean,
+			required: false,
+			default: false,
+		},
+		disableIfFollowing: {
+			type: Boolean,
+			required: false,
+			default: false,
+		},
+		large: {
 			type: Boolean,
 			required: false,
 			default: false,
@@ -92,7 +106,7 @@ export default defineComponent({
 
 			try {
 				if (this.isFollowing) {
-					const canceled = this.$store.state.device.showUnfollowConfirm && (await os.dialog({
+					const canceled = this.$store.state.showUnfollowConfirm && (await os.dialog({
 						type: 'warning',
 						text: this.$t('unfollowConfirm', { name: this.user.name || this.user.username }),
 						showCancelButton: true
@@ -108,7 +122,7 @@ export default defineComponent({
 							userId: this.user.id
 						});
 					} else if (this.user.isLocked) {
-						const canceled = this.$store.state.device.showFollowConfirm && (await os.dialog({
+						const canceled = this.$store.state.showFollowConfirm && (await os.dialog({
 							type: 'warning',
 							text: this.$t('followRequestConfirm', { name: this.user.name || this.user.username }),
 							showCancelButton: true
@@ -120,7 +134,7 @@ export default defineComponent({
 						});
 						this.hasPendingFollowRequestFromYou = true;
 					} else {
-						const canceled = this.$store.state.device.showFollowConfirm && (await os.dialog({
+						const canceled = this.$store.state.showFollowConfirm && (await os.dialog({
 							type: 'warning',
 							text: this.$t('followConfirm', { name: this.user.name || this.user.username }),
 							showCancelButton: true
@@ -159,6 +173,12 @@ export default defineComponent({
 	&.full {
 		padding: 0 8px 0 12px;
 		font-size: 14px;
+	}
+
+	&.large {
+		font-size: 16px;
+		height: 38px;
+		padding: 0 12px 0 16px;
 	}
 
 	&:not(.full) {

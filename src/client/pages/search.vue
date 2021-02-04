@@ -4,8 +4,8 @@
 		<XSearch v-model:value="query" @search="search"/>
 		<div class="tab _section _noPad" style="padding: 0">
 			<MkTab v-model:value="tab">
-				<option value="notes">{{$t('notes')}}</option>
-				<option value="users">{{$t('users')}}</option>
+				<option value="notes">{{$ts.notes}}</option>
+				<option value="users">{{$ts.users}}</option>
 			</MkTab>
 		</div>
 		<template v-if="smartCard">
@@ -24,7 +24,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { faSearch, faSpinner, faTimesCircle, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import Progress from '@/scripts/loading';
 import parseAcct from '../../misc/acct/parse';
@@ -67,7 +67,7 @@ export default defineComponent({
 			tab: this.$route.query.f || 'notes',
 			smartCard: null as SmartCard | null,
 			INFO: {
-				title: this.$t('searchWith', { q: this.$route.query.q }),
+				title: computed(() => this.$t('searchWith', { q: this.$route.query.q })),
 				icon: faSearch
 			},
 		};
@@ -154,7 +154,7 @@ export default defineComponent({
 			if (q.startsWith('https://')) {
 				this.smartCard = {
 					type: 'custom',
-					body: this.$t('fetchingAsApObject'),
+					body: this.$ts.fetchingAsApObject,
 					icon: faSpinner,
 				};
 				try {

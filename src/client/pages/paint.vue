@@ -2,37 +2,37 @@
 <div>
 	<section class="_section _vMargin" ref="editor">
 		<div class="tools">
-			<button class="_button" v-tooltip="$t('_paint.new')" @click="init">
+			<button class="_button" v-tooltip="$ts._paint.new" @click="init">
 				<fa :icon="farFileAlt"></fa>
 			</button>
-			<button class="_button" v-tooltip="$t('_paint.open')" @click="open">
+			<button class="_button" v-tooltip="$ts._paint.open" @click="open">
 				<fa :icon="farFolderOpen"></fa>
 			</button>
-			<button class="_button" v-tooltip="$t('_paint.save')" @click="save">
+			<button class="_button" v-tooltip="$ts._paint.save" @click="save">
 				<fa :icon="farSave"></fa>
 			</button>
-			<span class="progress" v-if="uploadingProgress" v-text="uploadingProgress === 100 ? $t('done') : `${uploadingProgress}%`" />
-			<button class="_button" v-tooltip="$t('_paint.undo')" @click="undo" :disabled="undoStack.length === 0">
+			<span class="progress" v-if="uploadingProgress" v-text="uploadingProgress === 100 ? $ts.done : `${uploadingProgress}%`" />
+			<button class="_button" v-tooltip="$ts._paint.undo" @click="undo" :disabled="undoStack.length === 0">
 				<fa :icon="faUndo"></fa>
 			</button>
-			<button class="_button" v-tooltip="$t('_paint.redo')" @click="redo" :disabled="redoStack.length === 0">
+			<button class="_button" v-tooltip="$ts._paint.redo" @click="redo" :disabled="redoStack.length === 0">
 				<fa :icon="faRedo"></fa>
 			</button>
-			<button class="_button post" v-tooltip="$t('post')" @click="post">
+			<button class="_button post" v-tooltip="$ts.post" @click="post">
 				<fa :icon="faEdit"></fa>
 			</button>
 		</div>
-		<div class="canvas-wrapper" ref="canvasWrapper" :class="{ animation: $store.state.device.animation }">
+		<div class="canvas-wrapper" ref="canvasWrapper" :class="{ animation: $store.state.animation }">
 			<canvas
 				ref="canvas"
-				:class="{ animation: $store.state.device.animation }"
+				:class="{ animation: $store.state.animation }"
 				:style="canvasStyle"
 			>
 				Your browser doesn't support this feature.
 			</canvas>
 			<canvas
 				ref="previewCanvas"
-				:class="{ animation: $store.state.device.animation }"
+				:class="{ animation: $store.state.animation }"
 				:style="canvasStyle"
 				@mousedown="onMouseDown"
 				@touchstart="onTouchStart"
@@ -44,20 +44,20 @@
 			<button class="_button" v-for="tool in [ 'hand', 'pen', 'eraser' ]" v-tooltip="$t('_paint.tools.' + tool)" :key="tool" @click="currentTool = tool" :class="{ active: currentTool === tool }">
 				<fa :icon="getToolIconOf(tool)" />
 			</button>
-			<button class="_button" v-tooltip="$t('_paint.tools.pixel')" @click="currentTool = 'pixel'" :class="{ active: currentTool === 'pixel' }">
+			<button class="_button" v-tooltip="$ts._paint.tools.pixel" @click="currentTool = 'pixel'" :class="{ active: currentTool === 'pixel' }">
 				<svg xmlns="http://www.w3.org/2000/svg" data-icon="pixel" style="width: 1em; height: 1em;">
 					<path fill="currentColor" d="M16 6V4h-2V2h-2V0h-2v2H8v2H6v2H4v2H2v4h2v2h4v-2h2v-2h2V8h2V6M2 14H0v2h2"/>
 				</svg>
 			</button>
-			<button class="_button" v-tooltip="$t('_paint.tools.shapes')" @click="changeShape" :class="{ active: isShape(currentTool) }">
+			<button class="_button" v-tooltip="$ts._paint.tools.shapes" @click="changeShape" :class="{ active: isShape(currentTool) }">
 				<fa :icon="isShape(currentTool) ? currentToolIcon : getToolIconOf('line')"></fa>
 			</button>
-			<input type="color" class="color" v-model="currentColor" v-tooltip="$t('_paint.changeColor')" />
-			<button class="_button" :disabled="zoom <= 10" @click="zoom -= 10" v-tooltip="$t('_paint.zoomMinus')">
+			<input type="color" class="color" v-model="currentColor" v-tooltip="$ts._paint.changeColor" />
+			<button class="_button" :disabled="zoom <= 10" @click="zoom -= 10" v-tooltip="$ts._paint.zoomMinus">
 				<fa :icon="faSearchMinus"></fa>
 			</button>
 			<div @click="chooseZoom" class="_link" style="cursor: pointer" v-text="zoom + '%'"/>
-			<button class="_button" :disabled="zoom >= 1200" @click="zoom += 10" v-tooltip="$t('_paint.zoomPlus')">
+			<button class="_button" :disabled="zoom >= 1200" @click="zoom += 10" v-tooltip="$ts._paint.zoomPlus">
 				<fa :icon="faSearchPlus"></fa>
 			</button>
 		</div>
@@ -65,21 +65,21 @@
 	<section class="_section _vMargin">
 		<div class="_content">
 			<div>
-				<MkSwitch v-model:value="usePressure" style="display: inline-flex">{{ $t('usePressure') }}
-					<template #desc>{{ $t('usePressureDescription') }}</template>
+				<MkSwitch v-model:value="usePressure" style="display: inline-flex">{{ $ts.usePressure }}
+					<template #desc>{{ $ts.usePressureDescription }}</template>
 				</MkSwitch>
 			</div>
 			<div>
 				<MkRange v-model:value="penWidth" :min="1" :max="256" :step="1" style="display: inline-block">
 					<template #icon><fa :icon="faPen"/></template>
-					<template #title><span v-text="$t('penWidth')"/></template>
+					<template #title><span v-text="$ts.penWidth"/></template>
 				</MkRange>
 				<span v-text="penWidth + 'px'"/>
 			</div>
 			<div>
 				<MkRange v-model:value="eraserWidth" :min="1" :max="256" :step="1" style="display: inline-block">
 					<template #icon><fa :icon="faEraser"/></template>
-					<template #title><span v-text="$t('eraserWidth')"/></template>
+					<template #title><span v-text="$ts.eraserWidth"/></template>
 				</MkRange>
 				<span v-text="eraserWidth + 'px'"/>
 			</div>
@@ -100,6 +100,7 @@ import { selectFile } from '../scripts/select-file';
 import { Form } from '../scripts/form';
 import { PackedDriveFile } from '../../models/repositories/drive-file';
 import * as os from '@/os';
+import { defaultStore } from '@/store';
 
 export const shapes = [ 'line', 'rect', 'circle', 'rectFill', 'circleFill' ] as const;
 
@@ -164,7 +165,7 @@ export default defineComponent({
 		if (this.changed) {
 			os.dialog({
 				type: 'warning',
-				text: this.$t('leaveConfirm'),
+				text: this.$ts.leaveConfirm,
 				showCancelButton: true
 			}).then(({ canceled }: any) => {
 				if (canceled) {
@@ -180,7 +181,7 @@ export default defineComponent({
 	data() {
 		return {
 			INFO: {
-				title: this.$t('paint'),
+				title: this.$ts.paint,
 				icon: faPaintBrush
 			},
 			currentTool: 'hand' as ToolType,
@@ -206,7 +207,7 @@ export default defineComponent({
 	},
 	metaInfo() {
 		return {
-			title: (this.$t('paint') as string) + (this.changed ? '*' : ''),
+			title: (this.$ts.paint as string) + (this.changed ? '*' : ''),
 		};
 	},
 	computed: {
@@ -226,18 +227,9 @@ export default defineComponent({
 				top: this.canvasY + 'px' 
 			};
 		},
-		penWidth: {
-			get() { return parseInt(this.$store.state.device.penWidth); },
-			set(value) { this.$store.commit('device/set', { key: 'penWidth', value }) }
-		},
-		eraserWidth: {
-			get() { return parseInt(this.$store.state.device.eraserWidth); },
-			set(value) { this.$store.commit('device/set', { key: 'eraserWidth', value }) }
-		},
-		usePressure: {
-			get() { return this.$store.state.device.usePressure; },
-			set(value) { this.$store.commit('device/set', { key: 'usePressure',value }) }
-		},
+		penWidth: defaultStore.makeGetterSetter('penWidth'),
+		eraserWidth: defaultStore.makeGetterSetter('eraserWidth'),
+		usePressure: defaultStore.makeGetterSetter('usePressure'),
 	},
 	watch: {
 		changed() {
@@ -301,7 +293,7 @@ export default defineComponent({
 			if (this.changed && confirm) {
 				const { canceled } = await os.dialog({
 					type: 'warning',
-					text: this.$t('initConfirm'),
+					text: this.$ts.initConfirm,
 					showCancelButton: true
 				});
 				if (canceled) return false;
@@ -310,22 +302,22 @@ export default defineComponent({
 			const form: Form = {
 				width: {
 					type: 'number',
-					label: this.$t('_paint.width'),
+					label: this.$ts._paint.width,
 					default: 300,
 				},
 				height: {
 					type: 'number',
-					label: this.$t('_paint.height'),
+					label: this.$ts._paint.height,
 					default: 300,
 				},
 				fillColor: {
 					type: 'enum',
-					label: this.$t('_paint.canvasColor'),
+					label: this.$ts._paint.canvasColor,
 					default: 'white',
 					enum: [ 'white', 'black', 'transparent' ],
 				},
 			};
-			const { canceled, result } = await os.form(this.$t('_paint.new'), form);
+			const { canceled, result } = await os.form(this.$ts._paint.new, form);
 
 			if (canceled) return false;
 			await this.createNew(result.width, result.height, result.fillColor);
@@ -349,50 +341,43 @@ export default defineComponent({
 			if (this.changed) {
 				const { canceled } = await os.dialog({
 					type: 'warning',
-					text: this.$t('initConfirm'),
+					text: this.$ts.initConfirm,
 					showCancelButton: true
 				});
 				if (canceled) return;
 			}
-			const file = await selectFile(this, e.currentTarget || e.target, this.$t('selectFile'), false);
+			const file = await selectFile(e.currentTarget || e.target, this.$ts.selectFile, false) as PackedDriveFile;
 			const img = new Image();
 			img.crossOrigin = '';
 			if (file.type.startsWith('image')) {
-				img.src = file.url;
+				img.src = file.url!;
 			} else if (file.thumbnailUrl) {
 				img.src = file.thumbnailUrl;
 			} else {
 				os.dialog({
 					type: 'error',
-					text: this.$t('theFileIsNotImage')
+					text: this.$ts.theFileIsNotImage
 				});
 				return;
 			}
-			const dialog = os.dialog({
-				type: 'waiting',
-				iconOnly: true,
-				cancelableByBgClick: false
-			});
 
 			img.onload = async () => {
-				dialog.close();
-				await this.createNew(img.naturalWidth, img.naturalHeight, false);
+				await this.createNew(img.naturalWidth, img.naturalHeight, 'transparent');
 				this.ctx!.drawImage(img, 0, 0);			
 				this.fileName = file.name;
 				this.changed = false;
 			};
 			img.onerror = (err) => {
-				dialog.close();
 				os.dialog({
 					type: 'error',
-					text: this.$t('failedToLoadImage')
+					text: this.$ts.failedToLoadImage
 				});				
 			};
 		},
 		async save() {
 			return new Promise<PackedDriveFile>((res, rej) => {
 				os.dialog({
-					title: this.$t('specifyFileName'),
+					title: this.$ts.specifyFileName,
 					input:  {
 						default: this.fileName
 					},
@@ -405,7 +390,7 @@ export default defineComponent({
 						if (!blob) return;
 
 						const data = new FormData();
-						data.append('i', this.$store.state.i.token);
+						data.append('i', this.$i.token);
 						data.append('force', 'true');
 						data.append('file', blob);
 						data.append('name', this.fileName);

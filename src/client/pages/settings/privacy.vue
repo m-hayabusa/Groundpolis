@@ -1,38 +1,55 @@
 <template>
-<div class="_section">
-	<div class="_card">
-		<div class="_content">
-			<MkSwitch v-model:value="isLocked" :disabled="carefulBot" @update:value="save()">{{ $t('makeFollowManuallyApprove') }}</MkSwitch>
-			<MkSwitch v-model:value="carefulBot" :disabled="isLocked" @update:value="save()">{{ $t('makeBotFollowManuallyApprove') }}</MkSwitch>
-			<MkSwitch v-model:value="autoAcceptFollowed" :disabled="!isLocked && !carefulBot" @update:value="save()">{{ $t('autoAcceptFollowed') }}</MkSwitch>
-			<MkSwitch v-model:value="hideFF" @update:value="save()">{{ $t('hideFF') }}</MkSwitch>
-			<MkSwitch v-model:value="noindex" @update:value="save()">{{ $t('noindex') }}</MkSwitch>
-		</div>
-		<div class="_content">
-			<MkSwitch v-model:value="rememberNoteVisibility" @update:value="save()">{{ $t('rememberNoteVisibility') }}</MkSwitch>
-			<MkSelect v-model:value="defaultNoteVisibility" style="margin-bottom: 8px;" v-if="!rememberNoteVisibility">
-				<template #label>{{ $t('defaultNoteVisibility') }}</template>
-				<option value="public">{{ $t('_visibility.public') }}</option>
-				<option value="home">{{ $t('_visibility.home') }}</option>
-				<option value="followers">{{ $t('_visibility.followers') }}</option>
-				<option value="specified">{{ $t('_visibility.specified') }}</option>
-			</MkSelect>
-			<MkSwitch v-model:value="defaultNoteLocalOnly" v-if="!rememberNoteVisibility">{{ $t('_visibility.localOnly') }}</MkSwitch>
-		</div>
-	</div>
-</div>
+<FormBase>
+	<FormGroup>
+		<FormSwitch v-model:value="isLocked" :disabled="carefulBot" @update:value="save()">{{ $ts.makeFollowManuallyApprove }}</FormSwitch>
+		<FormSwitch v-model:value="carefulBot" :disabled="isLocked" @update:value="save()">{{ $ts.makeBotFollowManuallyApprove }}</FormSwitch>
+		<FormSwitch v-model:value="autoAcceptFollowed" :disabled="!isLocked && !carefulBot" @update:value="save()">{{ $ts.autoAcceptFollowed }}</FormSwitch>
+		<template #caption>{{ $ts.lockedAccountInfo }}</template>
+	</FormGroup>
+	<FormGroup>
+		<FormSwitch v-model:value="hideFF" @update:value="save()">
+			{{ $ts.hideFF }}
+		</FormSwitch>
+		<FormSwitch v-model:value="noCrawle" @update:value="save()">
+			{{ $ts.noCrawle }}
+			<template #desc>{{ $ts.noCrawleDescription }}</template>
+		</FormSwitch>
+	</FormGroup>
+	<FormSwitch v-model:value="isExplorable" @update:value="save()">
+		{{ $ts.makeExplorable }}
+		<template #desc>{{ $ts.makeExplorableDescription }}</template>
+	</FormSwitch>
+	<FormSwitch v-model:value="rememberNoteVisibility" @update:value="save()">{{ $ts.rememberNoteVisibility }}</FormSwitch>
+	<FormGroup v-if="!rememberNoteVisibility">
+		<template #label>{{ $ts.defaultNoteVisibility }}</template>
+		<FormSelect v-model:value="defaultNoteVisibility">
+			<option value="public">{{ $ts._visibility.public }}</option>
+			<option value="home">{{ $ts._visibility.home }}</option>
+			<option value="followers">{{ $ts._visibility.followers }}</option>
+			<option value="specified">{{ $ts._visibility.specified }}</option>
+			<option value="users">{{ $ts._visibility.users }}</option>
+		</FormSelect>
+		<FormSwitch v-model:value="defaultNoteLocalOnly">{{ $ts._visibility.localOnly }}</FormSwitch>
+	</FormGroup>
+</FormBase>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import MkSelect from '@/components/ui/select.vue';
-import MkSwitch from '@/components/ui/switch.vue';
+import { faLockOpen } from '@fortawesome/free-solid-svg-icons';
+import FormSwitch from '@/components/form/switch.vue';
+import FormSelect from '@/components/form/select.vue';
+import FormBase from '@/components/form/base.vue';
+import FormGroup from '@/components/form/group.vue';
 import * as os from '@/os';
+import { defaultStore } from '@/store';
 
 export default defineComponent({
 	components: {
-		MkSelect,
-		MkSwitch,
+		FormBase,
+		FormSelect,
+		FormGroup,
+		FormSwitch,
 	},
 
 	data() {
@@ -41,33 +58,28 @@ export default defineComponent({
 			carefulBot: false,
 			autoAcceptFollowed: false,
 			hideFF: false,
-			noindex: false,
+			noCrawle: false,
+			isExplorable: false,
 		}
 	},
 
 	computed: {
-		defaultNoteVisibility: {
-			get() { return this.$store.state.settings.defaultNoteVisibility; },
-			set(value) { this.$store.dispatch('settings/set', { key: 'defaultNoteVisibility', value }); }
-		},
-
-		defaultNoteLocalOnly: {
-			get() { return this.$store.state.settings.defaultNoteLocalOnly; },
-			set(value) { this.$store.dispatch('settings/set', { key: 'defaultNoteLocalOnly', value }); }
-		},
-
-		rememberNoteVisibility: {
-			get() { return this.$store.state.settings.rememberNoteVisibility; },
-			set(value) { this.$store.dispatch('settings/set', { key: 'rememberNoteVisibility', value }); }
-		},
+		defaultNoteVisibility: defaultStore.makeGetterSetter('defaultNoteVisibility'),
+		defaultNoteLocalOnly: defaultStore.makeGetterSetter('defaultNoteLocalOnly'),
+		rememberNoteVisibility: defaultStore.makeGetterSetter('rememberNoteVisibility'),
 	},
 
 	created() {
-		this.isLocked = this.$store.state.i.isLocked;
-		this.hideFF = this.$store.state.i.hideFF;
-		this.carefulBot = this.$store.state.i.carefulBot;
-		this.autoAcceptFollowed = this.$store.state.i.autoAcceptFollowed;
-		this.noindex = this.$store.state.i.noindex;
+		this.isLocked = this.$i.isLocked;
+		this.hideFF = this.$i.hideFF;
+		this.carefulBot = this.$i.carefulBot;
+		this.autoAcceptFollowed = this.$i.autoAcceptFollowed;
+		this.noCrawle = this.$i.noCrawle;
+		this.isExplorable = this.$i.isExplorable;
+	},
+
+	mounted() {
+		this.$emit('info', this.INFO);
 	},
 
 	methods: {
@@ -77,7 +89,8 @@ export default defineComponent({
 				hideFF: !!this.hideFF,
 				carefulBot: !!this.carefulBot,
 				autoAcceptFollowed: !!this.autoAcceptFollowed,
-				noindex: !!this.noindex,
+				noCrawle: !!this.noCrawle,
+				isExplorable: !!this.isExplorable,
 			});
 		}
 	}

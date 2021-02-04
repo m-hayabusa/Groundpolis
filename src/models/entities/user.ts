@@ -173,10 +173,12 @@ export class User {
 	})
 	public isPremium: boolean;
 
+	@Index()
 	@Column('boolean', {
-		default: false,
+		default: true,
+		comment: 'Whether the User is explorable.'
 	})
-	public noindex: boolean;
+	public isExplorable: boolean;
 
 	@Column('varchar', {
 		length: 128, array: true, default: '{}'

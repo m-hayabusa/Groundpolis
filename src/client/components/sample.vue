@@ -9,13 +9,14 @@
 		</MkSwitch>
 		<div style="margin: 32px 0;">
 			<MkRadio v-model="radio" value="misskey">Misskey</MkRadio>
+			<MkRadio v-model="radio" value="groundpolis">Groundpolis</MkRadio>
 			<MkRadio v-model="radio" value="mastodon">Mastodon</MkRadio>
 			<MkRadio v-model="radio" value="pleroma">Pleroma</MkRadio>
 		</div>
 		<MkButton inline>This is</MkButton>
 		<MkButton inline primary>the button</MkButton>
 	</div>
-	<div class="_content">
+	<div class="_content" style="pointer-events: none;">
 		<Mfm :text="mfm"/>
 	</div>
 	<div class="_content">
@@ -49,9 +50,9 @@ export default defineComponent({
 	data() {
 		return {
 			text: '',
-			flag: false,
+			flag: true,
 			radio: 'misskey',
-			mfm: `Hello world! This is an @example mention. BTW you are @${this.$store.state.i.username}.\nAlso, here is ${config.url} and [example link](${config.url}). for more details, see https://example.com.\nAs you know #misskey is open-source software.`
+			mfm: `Hello world! This is an @example mention. BTW you are @${this.$i.username}.\nAlso, here is ${config.url} and [example link](${config.url}). for more details, see https://example.com.\nAs you know #Groundpolis is open-source software.`
 		}
 	},
 
@@ -59,7 +60,7 @@ export default defineComponent({
 		async openDialog() {
 			os.dialog({
 				type: 'warning',
-				title: 'Oh my Aichan',
+				title: 'Oh my Citrine',
 				text: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
 			});
 		},
@@ -78,7 +79,7 @@ export default defineComponent({
 				},
 				baz: {
 					type: 'string',
-					default: 'Misskey makes you happy.',
+					default: 'Groundpolis makes you happier than Misskey.',
 					label: 'This is a string property'
 				},
 			});

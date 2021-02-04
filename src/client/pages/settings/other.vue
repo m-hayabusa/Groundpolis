@@ -1,88 +1,81 @@
 <template>
-<div>
-	<div class="_section">
-		<div class="_card _vMargin">
-			<div class="_content">
-				<MkSwitch v-model:value="$store.state.i.injectFeaturedNote" @update:value="onChangeInjectFeaturedNote">
-					{{ $t('showFeaturedNotesInTimeline') }}
-				</MkSwitch>
-			</div>
-		</div>
-		<div class="_card _vMargin">
-			<div class="_content">
-				<MkSwitch v-model:value="debug" @update:value="changeDebug">
-					DEBUG MODE
-				</MkSwitch>
-				<MkButton full @click="regedit">Registry Editor</MkButton>
-				<MkButton full @click="taskmanager">Task Manager</MkButton>
-			</div>
-		</div>
-		<div class="_card _vMargin">
-			<div class="_title">{{$t('stealingRule')}}</div>
-			<div class="_content">
-				<MkSelect v-model:value="stealRule">
-					<option :value="0">{{ $t('_steal.textOnly') }}</option>
-					<option :value="1">{{ $t('_steal.react') }}</option>
-					<option :value="2">{{ $t('_steal.renote') }}</option>
-					<option :value="3">{{ $t('_steal.url') }}</option>
-				</MkSelect>
-				<MkButton v-if="stealRule === 1" @click="chooseReaction">
-					<mfm :text="$store.state.settings.stealReaction" :plain="true" />
-					<span style="margin-left: 16px" v-text="$t('chooseReaction')" />
-				</MkButton>
-			</div>
-		</div>
-		<div class="_card _vMargin">
-			<div class="_title">{{$t('dangerousSettings')}}</div>
-			<div class="_content">
-				<MkButton class="_vMargin" @click="discardPostFormDraft" full><Fa :icon="faTrashAlt"/> {{ $t('discardPostFormDraft') }}</MkButton>
-				<div class="_caption _vMargin" style="padding: 0 6px;">{{ $t('discardPostFormDraftDescription') }}</div>
-			</div>
-		</div>
-	</div>
-</div>
+<FormBase>
+	<FormSwitch v-model:value="reportError">{{ $ts.sendErrorReports }}<template #desc>{{ $ts.sendErrorReportsDescription }}</template></FormSwitch>
+
+	<FormLink to="/settings/account-info">{{ $ts.accountInfo }}</FormLink>
+	<FormLink to="/settings/labs">Groundpolis {{ $ts._labs.title }}</FormLink>
+
+	<FormGroup>
+		<template #label>{{ $ts.developer }}</template>
+		<FormSwitch v-model:value="debug" @update:value="changeDebug">
+			DEBUG MODE
+		</FormSwitch>
+		<FormButton @click="taskmanager">Task Manager</FormButton>
+	</FormGroup>
+
+	<FormGroup>
+		<FormSelect v-model:value="stealRule">
+			<template #label>{{ $ts.stealingRule }}</template>
+			<option :value="0">{{ $ts._steal.textOnly }}</option>
+			<option :value="1">{{ $ts._steal.react }}</option>
+			<option :value="2">{{ $ts._steal.renote }}</option>
+			<option :value="3">{{ $ts._steal.url }}</option>
+		</FormSelect>
+		<FormButton v-if="stealRule === 1" @click="chooseReaction">
+			<mfm :text="$store.state.stealReaction" :plain="true" />
+			<span style="margin-left: 16px" v-text="$ts.chooseReaction" />
+		</FormButton>
+	</FormGroup>
+
+	<FormLink to="/settings/registry"><template #icon><Fa :icon="faCogs"/></template>{{ $ts.registry }}</FormLink>
+
+	<FormGroup>
+		<template #label>{{ $ts.dangerousSettings }}</template>
+		<FormButton danger @click="discardPostFormDraft"><Fa :icon="faTrashAlt"/> {{ $ts.discardPostFormDraft }}</FormButton>
+		<template #caption>{{ $ts.discardPostFormDraftDescription }}</template>
+	</FormGroup>
+	<FormButton @click="closeAccount" danger>{{ $ts.closeAccount }}</FormButton>
+
+</FormBase>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
-import MkSwitch from '@/components/ui/switch.vue';
-import MkSelect from '@/components/ui/select.vue';
-import MkButton from '@/components/ui/button.vue';
+import { faTrashAlt, faCogs } from '@fortawesome/free-solid-svg-icons';
+import FormSwitch from '@/components/form/switch.vue';
+import FormSelect from '@/components/form/select.vue';
+import FormLink from '@/components/form/link.vue';
+import FormBase from '@/components/form/base.vue';
+import FormGroup from '@/components/form/group.vue';
+import FormButton from '@/components/form/button.vue';
 import * as os from '@/os';
 import { debug } from '@/config';
+import { defaultStore } from '@/store';
+import { signout } from '@/account';
 
 export default defineComponent({
 	components: {
-		MkSwitch,
-		MkSelect,
-		MkButton,
+		FormBase,
+		FormSelect,
+		FormSwitch,
+		FormButton,
+		FormLink,
+		FormGroup,
 	},
 
 	data() {
 		return {
-			debug,
-			faTrashAlt,
+			debug, faTrashAlt, faCogs
 		}
 	},
 
 	computed: {
-		stealRule: {
-			get() { return this.$store.state.settings.stealRule; },
-			set(value) { this.$store.dispatch('settings/set', { key: 'stealRule', value }); }
-		},
-		stealReaction: {
-			get() { return this.$store.state.settings.stealReaction; },
-			set(value) { this.$store.dispatch('settings/set', { key: 'stealReaction', value }); }
-		},
+		stealRule: defaultStore.makeGetterSetter('stealRule'),
+		stealReaction: defaultStore.makeGetterSetter('stealReaction'),
+		reportError: defaultStore.makeGetterSetter('reportError'),
 	},
 
 	methods: {
-		onChangeInjectFeaturedNote(v) {
-			os.api('i/update', {
-				injectFeaturedNote: v
-			});
-		},
 		async chooseReaction(e) {
 			this.stealReaction = (await os.reactionPicker({
 				source: e.currentTarget || e.target,
@@ -105,8 +98,31 @@ export default defineComponent({
 		},
 		
 		discardPostFormDraft() {
-			localStorage.removeItem('drafts');
+			os.dialog({
+				text: this.$ts.discardPostFormDraftConfirm,
+				showCancelButton: true,
+			}).then(({ canceled }) => {
+				if (canceled) return;
+				localStorage.removeItem('drafts');
+			});
 		},
+
+		closeAccount() {
+			os.dialog({
+				title: this.$ts.closeAccountConfirm,
+				text: this.$ts.closeAccountConfirmDesc,
+				input: {
+					type: 'password'
+				}
+			}).then(({ canceled, result: password }) => {
+				if (canceled) return;
+				os.api('i/delete-account', {
+					password: password
+				}).then(() => {
+					signout();
+				});
+			});
+		}
 	}
 });
 </script>

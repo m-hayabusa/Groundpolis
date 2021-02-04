@@ -48,7 +48,7 @@ export class DriveFileRepository extends Repository<DriveFile> {
 		return thumbnail ? (file.thumbnailUrl || (isImage ? (file.webpublicUrl || file.url) : null)) : (file.webpublicUrl || file.url);
 	}
 
-	public async clacDriveUsageOf(user: User['id'] | User): Promise<number> {
+	public async calcDriveUsageOf(user: User['id'] | User): Promise<number> {
 		const id = typeof user === 'object' ? user.id : user;
 
 		const { sum } = await this
@@ -60,7 +60,7 @@ export class DriveFileRepository extends Repository<DriveFile> {
 		return parseInt(sum, 10) || 0;
 	}
 
-	public async clacDriveUsageOfHost(host: string): Promise<number> {
+	public async calcDriveUsageOfHost(host: string): Promise<number> {
 		const { sum } = await this
 			.createQueryBuilder('file')
 			.where('file.userHost = :host', { host: toPuny(host) })
@@ -70,7 +70,7 @@ export class DriveFileRepository extends Repository<DriveFile> {
 		return parseInt(sum, 10) || 0;
 	}
 
-	public async clacDriveUsageOfLocal(): Promise<number> {
+	public async calcDriveUsageOfLocal(): Promise<number> {
 		const { sum } = await this
 			.createQueryBuilder('file')
 			.where('file.userHost IS NULL')
@@ -80,7 +80,7 @@ export class DriveFileRepository extends Repository<DriveFile> {
 		return parseInt(sum, 10) || 0;
 	}
 
-	public async clacDriveUsageOfRemote(): Promise<number> {
+	public async calcDriveUsageOfRemote(): Promise<number> {
 		const { sum } = await this
 			.createQueryBuilder('file')
 			.where('file.userHost IS NOT NULL')
@@ -130,13 +130,13 @@ export class DriveFileRepository extends Repository<DriveFile> {
 	}
 
 	public packMany(
-		files: any[],
+		files: (DriveFile['id'] | DriveFile)[],
 		options?: {
 			detail?: boolean
 			self?: boolean,
 			withUser?: boolean,
 		}
-	) {
+	): Promise<PackedDriveFile[]> {
 		return Promise.all(files.map(f => this.pack(f, options)));
 	}
 }

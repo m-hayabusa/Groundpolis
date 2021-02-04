@@ -21,7 +21,7 @@ export default defineComponent({
 	data() {
 		return {
 			INFO: {
-				title: this.$t('help'),
+				title: this.$ts.help,
 				icon: faQuestionCircle
 			},
 			docs: [],
@@ -38,7 +38,8 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-	.doc {
+	.doc > a {
+		display: block;
 		padding: 16px;
 	}
 </style>

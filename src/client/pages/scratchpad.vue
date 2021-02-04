@@ -1,20 +1,27 @@
 <template>
-<div class="">
-	<div class="_panel">
-		<prism-editor class="_code" v-model:value="code" :highlight="highlighter" :line-numbers="false"/>
-		<MkButton style="position: absolute; top: 8px; right: 8px;" @click="run()" primary><Fa :icon="faPlay"/></MkButton>
+<div class="iltifgqe">
+	<div class="_vMargin">
+		{{ $ts.scratchpadDescription }}
 	</div>
 
-	<MkContainer :body-togglable="true">
-		<template #header><Fa fixed-width/>{{ $t('output') }}</template>
+	<div class="editor _panel _vMargin">
+		<PrismEditor class="_code code" v-model="code" :highlight="highlighter" :line-numbers="true"/>
+	</div>
+
+	<MkContainer v-if="error" :body-togglable="true" class="_vMargin">
+		<template #header><Fa fixed-width/>{{ $ts.error }}</template>
+		<div class="lm92b6x9">
+			<div v-text="error.message" />
+			<div class="details" v-if="error.details" v-text="error.details" />
+		</div>
+	</MkContainer>
+
+	<MkContainer :body-togglable="true" class="_vMargin">
+		<template #header><Fa fixed-width/>{{ $ts.output }}</template>
 		<div class="bepmlvbi">
 			<div v-for="log in logs" class="log" :key="log.id" :class="{ print: log.print }">{{ log.text }}</div>
 		</div>
 	</MkContainer>
-
-	<section class="_section" style="margin-top: var(--margin);">
-		<div class="_content">{{ $t('scratchpadDescription') }}</div>
-	</section>
 </div>
 </template>
 
@@ -44,12 +51,19 @@ export default defineComponent({
 	data() {
 		return {
 			INFO: {
-				title: this.$t('scratchpad'),
+				title: this.$ts.scratchpad,
 				icon: faTerminal,
+				action: {
+					icon: faPlay,
+					handler: () => this.run(),
+				}
 			},
 			code: '',
 			logs: [],
-			faTerminal, faPlay
+			error: null as null | {
+				message: string;
+				details?: string;
+			},
 		}
 	},
 
@@ -68,6 +82,7 @@ export default defineComponent({
 
 	methods: {
 		async run() {
+			this.error = null;
 			this.logs = [];
 			const aiscript = new AiScript(createAiScriptEnv({
 				storageKey: 'scratchpad'
@@ -101,23 +116,23 @@ export default defineComponent({
 				}
 			});
 
+
 			let ast;
 			try {
 				ast = parse(this.code);
-			} catch (e) {
-				os.dialog({
-					type: 'error',
-					text: 'Syntax error :('
-				});
+			} catch (e: any) {
+				this.error = {
+					message: 'Syntax error :(',
+					details: e.message,
+				};
 				return;
 			}
 			try {
 				await aiscript.exec(ast);
 			} catch (e) {
-				os.dialog({
-					type: 'error',
-					text: e
-				});
+				this.error = {
+					message: e.message,
+				};
 			}
 		},
 
@@ -129,6 +144,14 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+.iltifgqe {
+	padding: 16px;
+
+	> .editor {
+		position: relative;
+	}
+}
+
 .bepmlvbi {
 	padding: 16px;
 
@@ -136,6 +159,14 @@ export default defineComponent({
 		&:not(.print) {
 			opacity: 0.7;
 		}
+	}
+}
+
+.lm92b6x9 {
+	padding: 16px;
+	.details {
+		font-style: italic;
+		opacity: 0.8;
 	}
 }
 </style>

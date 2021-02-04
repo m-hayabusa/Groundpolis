@@ -1,93 +1,81 @@
 <template>
-<div class="_section">
-	<div class="_card">
-		<div class="_content">
-			<MkSwitch v-model:value="emojiPickerShowPinnedEmojis">{{ $t('emojiPickerShowPinnedEmojis') }}</MkSwitch>
-			<template v-if="emojiPickerShowPinnedEmojis">
-				<div class="_caption" style="padding: 0 8px 8px 8px;">{{ $t('reactionSettingDescription') }}</div>
-				<XDraggable class="zoaiodol" :list="reactions" animation="150" delay="100" delay-on-touch-only="true">
-					<button class="_button item" v-for="reaction in reactions" :key="reaction" @click="remove(reaction, $event)">
-						<MkEmoji :emoji="reaction" :normal="true"/>
+<FormBase>
+	<FormSwitch v-model:value="emojiPickerShowPinnedEmojis">{{ $ts.emojiPickerShowPinnedEmojis }}</FormSwitch>
+
+	<div class="_formItem" v-if="emojiPickerShowPinnedEmojis">
+		<div class="_formLabel">{{ $ts.reactionSettingDescription }}</div>
+		<div class="_formPanel">
+			<XDraggable class="zoaiodol" v-model="reactions" :item-key="item => item" animation="150" delay="100" delay-on-touch-only="true">
+				<template #item="{element}">
+					<button class="_button item" @click="remove(element, $event)">
+						<MkEmoji :emoji="element" :normal="true"/>
 					</button>
-					<template #footer>
-						<button>a</button>
-					</template>
-				</XDraggable>
-				<div class="_caption" style="padding: 8px;">{{ $t('reactionSettingDescription2') }} <button class="_textButton" @click="chooseEmoji">{{ $t('chooseEmoji') }}</button></div>
-			</template>
-			<MkSwitch v-model:value="emojiPickerShowRecentEmojis">{{ $t('emojiPickerShowRecentEmojis') }}</MkSwitch>
-			<MkRadios v-model="reactionPickerWidth">
-				<template #desc>{{ $t('width') }}</template>
-				<option :value="1">{{ $t('small') }}</option>
-				<option :value="2">{{ $t('medium') }}</option>
-				<option :value="3">{{ $t('large') }}</option>
-			</MkRadios>
-			<MkRadios v-model="reactionPickerHeight">
-				<template #desc>{{ $t('height') }}</template>
-				<option :value="1">{{ $t('small') }}</option>
-				<option :value="2">{{ $t('medium') }}</option>
-				<option :value="3">{{ $t('large') }}</option>
-			</MkRadios>
+				</template>
+				<template #footer>
+					<button class="_button add" @click="chooseEmoji"><Fa :icon="faPlus"/></button>
+				</template>
+			</XDraggable>
 		</div>
-		<div class="_footer">
-			<MkButton inline @click="preview"><Fa :icon="faEye"/> {{ $t('preview') }}</MkButton>
-			<MkButton inline @click="setDefault"><Fa :icon="faUndo"/> {{ $t('default') }}</MkButton>
-		</div>
+		<div class="_formCaption" v-text="$ts.reactionSettingDescription2" />
+		<FormButton danger @click="setDefault"><Fa :icon="faUndo"/> {{ $ts.default }}</FormButton>
 	</div>
-</div>
+	<FormGroup>
+		<FormSwitch v-model:value="emojiPickerShowRecentEmojis">{{ $ts.emojiPickerShowRecentEmojis }}</FormSwitch>
+		<FormButton v-if="emojiPickerShowRecentEmojis" @click="clearRecent" danger><Fa :icon="faTrashAlt"/> {{ $ts.clearHistories }}</FormButton>
+	</FormGroup>
+	<FormRadios v-model="reactionPickerWidth">
+		<template #desc>{{ $ts.width }}</template>
+		<option :value="1">{{ $ts.small }}</option>
+		<option :value="2">{{ $ts.medium }}</option>
+		<option :value="3">{{ $ts.large }}</option>
+	</FormRadios>
+	<FormRadios v-model="reactionPickerHeight">
+		<template #desc>{{ $ts.height }}</template>
+		<option :value="1">{{ $ts.small }}</option>
+		<option :value="2">{{ $ts.medium }}</option>
+		<option :value="3">{{ $ts.large }}</option>
+	</FormRadios>
+	<FormButton @click="preview"><Fa :icon="faEye"/> {{ $ts.preview }}</FormButton>
+</FormBase>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { faSave, faEye, faLaugh } from '@fortawesome/free-regular-svg-icons';
-import { faUndo } from '@fortawesome/free-solid-svg-icons';
-import { VueDraggableNext } from 'vue-draggable-next';
-import MkInput from '@/components/ui/input.vue';
-import MkButton from '@/components/ui/button.vue';
-import MkSwitch from '@/components/ui/switch.vue';
-import MkRadios from '@/components/ui/radios.vue';
-import { emojiRegexWithCustom } from '../../../misc/emoji-regex';
-import { defaultSettings } from '@/store';
+import { faLaugh, faSave, faEye } from '@fortawesome/free-regular-svg-icons';
+import { faUndo, faPlus } from '@fortawesome/free-solid-svg-icons';
+import XDraggable from 'vuedraggable';
+import FormInput from '@/components/form/input.vue';
+import FormSwitch from '@/components/form/switch.vue';
+import FormGroup from '@/components/form/group.vue';
+import FormRadios from '@/components/form/radios.vue';
+import FormBase from '@/components/form/base.vue';
+import FormButton from '@/components/form/button.vue';
 import * as os from '@/os';
+import { defaultStore } from '@/store';
 
 export default defineComponent({
 	components: {
-		MkInput,
-		MkButton,
-		MkSwitch,
-		MkRadios,
-		XDraggable: VueDraggableNext,
+		FormInput,
+		FormButton,
+		FormBase,
+		FormRadios,
+		FormSwitch,
+		FormGroup,
+		XDraggable,
 	},
 
 	data() {
 		return {
-			reactions: JSON.parse(JSON.stringify(this.$store.state.settings.reactions)),
-			changed: false,
-			faLaugh, faSave, faEye, faUndo
+			reactions: JSON.parse(JSON.stringify(this.$store.state.reactions)),
+			faLaugh, faSave, faEye, faUndo, faPlus
 		}
 	},
 
 	computed: {
-		useFullReactionPicker: {
-			get() { return this.$store.state.device.useFullReactionPicker; },
-			set(value) { this.$store.commit('device/set', { key: 'useFullReactionPicker', value: value }); }
-		},
-		reactionPickerWidth: {
-			get() { return this.$store.state.device.reactionPickerWidth; },
-			set(value) { this.$store.commit('device/set', { key: 'reactionPickerWidth', value: value }); }
-		},
-		reactionPickerHeight: {
-			get() { return this.$store.state.device.reactionPickerHeight; },
-			set(value) { this.$store.commit('device/set', { key: 'reactionPickerHeight', value: value }); }
-		},
-		emojiPickerShowPinnedEmojis: {
-			get() { return !this.$store.state.device.emojiPickerHidePinnedEmojis; },
-			set(value) { this.$store.commit('device/set', { key: 'emojiPickerHidePinnedEmojis', value: !value }); }
-		},
-		emojiPickerShowRecentEmojis: {
-			get() { return !this.$store.state.device.emojiPickerHideRecentEmojis; },
-			set(value) { this.$store.commit('device/set', { key: 'emojiPickerHideRecentEmojis', value: !value }); }
-		},
+		reactionPickerWidth: defaultStore.makeGetterSetter('reactionPickerWidth'),
+		reactionPickerHeight: defaultStore.makeGetterSetter('reactionPickerHeight'),
+		emojiPickerShowPinnedEmojis: defaultStore.makeGetterSetter('emojiPickerHidePinnedEmojis', v => !v, v => !v),
+		emojiPickerShowRecentEmojis: defaultStore.makeGetterSetter('emojiPickerHideRecentEmojis', v => !v, v => !v),
 	},
 
 	watch: {
@@ -105,12 +93,12 @@ export default defineComponent({
 
 	methods: {
 		save() {
-			this.$store.dispatch('settings/set', { key: 'reactions', value: this.reactions });
+			this.$store.set('reactions', this.reactions);
 		},
 
 		remove(reaction, ev) {
 			os.modalMenu([{
-				text: this.$t('remove'),
+				text: this.$ts.remove,
 				action: () => {
 					this.reactions = this.reactions.filter(x => x !== reaction)
 				}
@@ -127,12 +115,23 @@ export default defineComponent({
 		async setDefault() {
 			const { canceled } = await os.dialog({
 				type: 'warning',
-				text: this.$t('resetAreYouSure'),
+				text: this.$ts.resetAreYouSure,
 				showCancelButton: true
 			});
 			if (canceled) return;
 
-			this.reactions = JSON.parse(JSON.stringify(defaultSettings.reactions));
+			this.reactions = JSON.parse(JSON.stringify(this.$store.def.reactions.default));
+		},
+
+		async clearRecent() {
+			const { canceled } = await os.dialog({
+				type: 'warning',
+				text: this.$ts.resetAreYouSure,
+				showCancelButton: true
+			});
+			if (canceled) return;
+
+			this.$store.set('recentlyUsedEmojis', []);
 		},
 
 		chooseEmoji(ev) {
@@ -150,14 +149,17 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .zoaiodol {
-	border: solid 1px var(--divider);
-	border-radius: var(--radius);
 	padding: 16px;
 
 	> .item {
 		display: inline-block;
 		padding: 8px;
 		cursor: move;
+	}
+
+	> .add {
+		display: inline-block;
+		padding: 8px;
 	}
 }
 </style>
