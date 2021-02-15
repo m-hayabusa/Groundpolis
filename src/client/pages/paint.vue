@@ -41,7 +41,7 @@
 			</canvas>
 		</div>
 		<div class="tools">
-			<button class="_button" v-for="tool in [ 'hand', 'pen', 'eraser' ]" v-tooltip="$t('_paint.tools.' + tool)" :key="tool" @click="currentTool = tool" :class="{ active: currentTool === tool }">
+			<button class="_button" v-for="tool in [ 'hand', 'pen', 'eraser', 'spoit' ]" v-tooltip="$ts._paint.tools[tool]" :key="tool" @click="currentTool = tool" :class="{ active: currentTool === tool }">
 				<fa :icon="getToolIconOf(tool)" />
 			</button>
 			<button class="_button" v-tooltip="$ts._paint.tools.pixel" @click="currentTool = 'pixel'" :class="{ active: currentTool === 'pixel' }">
@@ -52,7 +52,9 @@
 			<button class="_button" v-tooltip="$ts._paint.tools.shapes" @click="changeShape" :class="{ active: isShape(currentTool) }">
 				<fa :icon="isShape(currentTool) ? currentToolIcon : getToolIconOf('line')"></fa>
 			</button>
-			<input type="color" class="color" v-model="currentColor" v-tooltip="$ts._paint.changeColor" />
+			<button class="_button color-picker" v-tooltip="$ts._paint.changeColor" @click="pickColor">
+				<div class="circle" :style="{backgroundColor: currentColorString}" />
+			</button>
 			<button class="_button" :disabled="zoom <= 10" @click="zoom -= 10" v-tooltip="$ts._paint.zoomMinus">
 				<fa :icon="faSearchMinus"></fa>
 			</button>
@@ -72,14 +74,14 @@
 			<div>
 				<MkRange v-model:value="penWidth" :min="1" :max="256" :step="1" style="display: inline-block">
 					<template #icon><fa :icon="faPen"/></template>
-					<template #title><span v-text="$ts.penWidth"/></template>
+					<template #label><span v-text="$ts.penWidth"/></template>
 				</MkRange>
 				<span v-text="penWidth + 'px'"/>
 			</div>
 			<div>
 				<MkRange v-model:value="eraserWidth" :min="1" :max="256" :step="1" style="display: inline-block">
 					<template #icon><fa :icon="faEraser"/></template>
-					<template #title><span v-text="$ts.eraserWidth"/></template>
+					<template #label><span v-text="$ts.eraserWidth"/></template>
 				</MkRange>
 				<span v-text="eraserWidth + 'px'"/>
 			</div>
@@ -90,7 +92,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { faPaintBrush, faPaw, faPen, faEraser, faSlash, faSquare, faCircle, faSearchMinus, faSearchPlus, faUndo, faRedo, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { faPaintBrush, faPaw, faPen, faEraser, faSlash, faSquare, faCircle, faSearchMinus, faSearchPlus, faUndo, faRedo, faEdit, faEyeDropper } from '@fortawesome/free-solid-svg-icons';
 import { faSquare as farSquare, faCircle as farCircle, faSave as farSave, faFolderOpen as farFolderOpen, faFileAlt as farFileAlt, faQuestionCircle as farQuestionCircle } from '@fortawesome/free-regular-svg-icons';
 
 import MkSwitch from '../components/ui/switch.vue';
@@ -101,12 +103,13 @@ import { Form } from '../scripts/form';
 import { PackedDriveFile } from '../../models/repositories/drive-file';
 import * as os from '@/os';
 import { defaultStore } from '@/store';
+import { Rgba, toHtmlColor } from '@/scripts/rgba';
 
 export const shapes = [ 'line', 'rect', 'circle', 'rectFill', 'circleFill' ] as const;
 
 export type ShapeType = typeof shapes[number];
 
-export type ToolType = 'hand'| 'pen' | 'eraser' | ShapeType;
+export type ToolType = 'hand'| 'pen' | 'eraser' | 'pixel' | 'spoit' | ShapeType;
 
 export type InitialColor = 'white' | 'black' | 'transparent';
 
@@ -120,6 +123,8 @@ export const getToolIconOf = (type: ToolType) => {
 		case 'circle': return farCircle;
 		case 'rectFill': return faSquare;
 		case 'circleFill': return faCircle;
+		case 'spoit': return faEyeDropper;
+		default: return null;
 	}
 };
 
@@ -185,7 +190,7 @@ export default defineComponent({
 				icon: faPaintBrush
 			},
 			currentTool: 'hand' as ToolType,
-			currentColor: '#000000',
+			currentColor: [0, 0, 0, 255] as Rgba,
 			zoom: 100,
 			canvasX: 0,
 			canvasY: 0,
@@ -226,6 +231,9 @@ export default defineComponent({
 				left: this.canvasX + 'px',
 				top: this.canvasY + 'px' 
 			};
+		},
+		currentColorString () {
+			return toHtmlColor(this.currentColor);
 		},
 		penWidth: defaultStore.makeGetterSetter('penWidth'),
 		eraserWidth: defaultStore.makeGetterSetter('eraserWidth'),
@@ -269,7 +277,7 @@ export default defineComponent({
 		getToolIconOf,
 		genToolMenuItem(type: ToolType)  {
 			return {
-				text: this.$t('_paint.tools.' + type),
+				text: this.$ts._paint.tools[type],
 				icon: getToolIconOf(type),
 				action: () => { this.currentTool = type; },
 			}
@@ -288,6 +296,18 @@ export default defineComponent({
 		},
 		chooseZoom(ev: MouseEvent) {
 			os.modalMenu([10, 50, 100, 250, 500, 1000, 1200].map(this.genZoomMenuItem), ev.currentTarget || ev.target);
+		},
+		pickColor(ev: MouseEvent) {
+			os.popup(import('../components/color-picker.vue'), {
+				// prop
+				src: ev.currentTarget || ev.target,
+				color: this.currentColor,
+			}, {
+				// イベント
+				changed: (color: Rgba) => {
+					this.currentColor = color;
+				},
+			}, 'closed');
 		},
 		async init(confirm = true) {
 			if (this.changed && confirm) {
@@ -314,7 +334,11 @@ export default defineComponent({
 					type: 'enum',
 					label: this.$ts._paint.canvasColor,
 					default: 'white',
-					enum: [ 'white', 'black', 'transparent' ],
+					enum: [ 'white', 'black', 'transparent' ].map(c => ({
+						label: c,
+						value: c,
+					})),
+					
 				},
 			};
 			const { canceled, result } = await os.form(this.$ts._paint.new, form);
@@ -334,7 +358,7 @@ export default defineComponent({
 			this.ctx.fillStyle = fill;
 			this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 			this.ctx.fillStyle = 'transparent';
-			this.ctx.strokeStyle = this.currentColor;
+			this.ctx.strokeStyle = this.currentColorString;
 			this.changed = false;
 		},
 		async open(e) {
@@ -526,8 +550,8 @@ export default defineComponent({
 			const c = this.ctx as CanvasRenderingContext2D;
 			const cp = this.ctxPreview;
 			// 色を当てる
-			c.strokeStyle =	cp.strokeStyle = this.currentColor;
-			c.fillStyle = cp.fillStyle = this.currentColor;
+			c.strokeStyle =	cp.strokeStyle = this.currentColorString;
+			c.fillStyle = cp.fillStyle = this.currentColorString;
 			c.lineWidth = cp.lineWidth = this.penWidth;
 
 			if (this.usePressure && (this.currentTool === 'pen' || this.currentTool === 'eraser')) {
@@ -601,6 +625,14 @@ export default defineComponent({
 				case 'pixel': {
 					// https://ja.wikipedia.org/wiki/%E3%83%96%E3%83%AC%E3%82%BC%E3%83%B3%E3%83%8F%E3%83%A0%E3%81%AE%E3%82%A2%E3%83%AB%E3%82%B4%E3%83%AA%E3%82%BA%E3%83%A0#%E5%8D%98%E7%B4%94%E5%8C%96
 					drawPixel(px, x, py, y, c);
+					break;
+				}
+
+				case 'spoit': {
+					const [r, g, b, a] = c.getImageData(x, y, 1, 1).data;
+					this.currentColor = [
+						r, g, b, a / 255,
+					];
 					break;
 				}
 			}
@@ -729,6 +761,17 @@ export default defineComponent({
 		min-width: 48px;
 		height: 48px;
 		border-radius: 24px;
+
+		&.color-picker {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			> .circle {
+				width: 24px;
+				height: 24px;
+				outline: 1px solid var(--divider);
+			}
+		}
 
 		&:hover {
 			background: var(--buttonHoverBg);

@@ -1,8 +1,8 @@
 import { Component, defineAsyncComponent } from 'vue';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 
-import { faPalette, faPlug, faUser, faListUl, faLock, faMusic, faCogs, faEllipsisH, faBan, faShareAlt, faLockOpen, faKey, faBoxes, faFlask, faFish, faCommentSlash, faMagic, faColumns, faStream, faDownload, faFolderOpen, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
-import { faLaugh, faBell } from '@fortawesome/free-regular-svg-icons';
+import { faPalette, faPlug, faUser, faListUl, faLock, faMusic, faCogs, faEllipsisH, faBan, faShareAlt, faLockOpen, faKey, faBoxes, faFlask, faFish, faCommentSlash, faMagic, faColumns, faStream, faDownload, faFolderOpen, faInfoCircle, faCloud, faSyncAlt, faGlobe } from '@fortawesome/free-solid-svg-icons';
+import { faLaugh, faBell, faEnvelope } from '@fortawesome/free-regular-svg-icons';
 import { faCss3Alt } from '@fortawesome/free-brands-svg-icons';
 
 import { i18n } from '@/i18n';
@@ -38,6 +38,13 @@ export const pages: PageDefinition[] = [
 		component: () => defineAsyncComponent(() => import('./reaction.vue')),
 	},
 	{
+		name: 'drive',
+		icon: faCloud,
+		title: ts.drive,
+		type: 'basic',
+		component: () => defineAsyncComponent(() => import('./drive.vue')),
+	},
+	{
 		name: 'notifications',
 		icon: faBell,
 		title: ts.notifications,
@@ -46,7 +53,7 @@ export const pages: PageDefinition[] = [
 	},
 	{
 		name: 'email',
-		icon: faUser,
+		icon: faEnvelope,
 		title: ts.email,
 		type: 'basic',
 		component: () => defineAsyncComponent(() => import('./email.vue')),
@@ -101,11 +108,11 @@ export const pages: PageDefinition[] = [
 		component: () => defineAsyncComponent(() => import('./sounds.vue')),
 	},
 	{
-		name: 'plugins',
+		name: 'plugin',
 		icon: faPlug,
 		title: ts.plugins,
 		type: 'client',
-		component: () => defineAsyncComponent(() => import('./plugins.vue')),
+		component: () => defineAsyncComponent(() => import('./plugin.vue')),
 	},
 	{
 		name: 'gacha',
@@ -183,6 +190,13 @@ export const pages: PageDefinition[] = [
 		component: () => defineAsyncComponent(() => import('./theme.manage.vue')),
 	},
 	{
+		name: 'theme/store',
+		type: 'hidden',
+		title: ts._theme.explore,
+		icon: faGlobe,
+		component: () => defineAsyncComponent(() => import('./theme.store.vue')),
+	},
+	{
 		name: 'account-info',
 		type: 'hidden',
 		title: ts.accountInfo,
@@ -237,5 +251,12 @@ export const pages: PageDefinition[] = [
 		title: ts.experimentalFeatures,
 		icon: faFlask,
 		component: () => defineAsyncComponent(() => import('./experimental-features.vue'))
+	},
+	{
+		name: 'update',
+		type: 'hidden',
+		title: 'Groundpolis Update',
+		icon: faSyncAlt,
+		component: () => defineAsyncComponent(() => import('./update.vue'))
 	}
 ];

@@ -15,6 +15,39 @@
 (async () => {
 	const v = localStorage.getItem('v') || VERSION;
 
+	const splashText = document.getElementById('splash');
+
+	function printSplash(data) {
+		splashText.innerText = String(data);
+	}
+
+	printSplash('Booting');
+
+	const res = await fetch('/api/meta', {
+		method: 'POST',
+		cache: 'no-cache'
+	}).catch(e => {
+		printSplash(e);
+	});
+
+	if (res.status !== 200) {
+		printSplash(res.statusText);
+		return;
+	}
+
+	const meta = await res.json().catch(e => {
+		printSplash(e);
+	});
+
+	let version = meta.version;
+	
+	const updateRequired = v !== version;
+
+	if (updateRequired) {
+		localStorage.removeItem('locale');
+		printSplash('Updating Groundpolis');
+	}
+
 	//#region Detect language & fetch translations
 	if (localStorage.hasOwnProperty('locale')) {
 		// TODO: 非同期でlocaleの更新処理をする
@@ -32,10 +65,9 @@
 			}
 		}
 
-		const res = await fetch(`/assets/locales/${lang}.${v}.json`);
-		const json = await res.json();
+		const res = await fetch(`/assets/locales/${lang}.${version}.json`);
 		localStorage.setItem('lang', lang);
-		localStorage.setItem('locale', JSON.stringify(json));
+		localStorage.setItem('locale', await res.text());
 	}
 	//#endregion
 
@@ -47,33 +79,13 @@
 	const head = document.getElementsByTagName('head')[0];
 
 	const script = document.createElement('script');
-	script.setAttribute('src', `/assets/app.${v}.js${salt}`);
+	script.setAttribute('src', `/assets/app.${version}.js${salt}`);
 	script.setAttribute('async', 'true');
 	script.setAttribute('defer', 'true');
+	script.addEventListener('error', async (e) => {
+		printSplash('Error: ' + e.message);
+	});
 	head.appendChild(script);
-
-	// 3秒経ってもスクリプトがロードされない場合はバージョンが古くて
-	// 404になっているせいかもしれないので、バージョンを確認して古ければ更新する
-	//
-	// 読み込まれたスクリプトからこのタイマーを解除できるように、
-	// グローバルにタイマーIDを代入しておく
-	window.mkBootTimer = window.setTimeout(async () => {
-		const res = await fetch('/api/meta', {
-			method: 'POST',
-			cache: 'no-cache'
-		});
-
-		const meta = await res.json();
-
-		if (meta.version != v) {
-			localStorage.setItem('v', meta.version);
-			alert(
-				'Misskeyの新しいバージョンがあります。ページを再度読み込みします。' +
-				'\n\n' +
-				'New version of Misskey available. The page will be reloaded.');
-			refresh();
-		}
-	}, 3000);
 	//#endregion
 
 	//#region Theme
@@ -101,8 +113,11 @@
 	}
 
 	const useSystemFont = localStorage.getItem('useSystemFont');
-	if (useSystemFont) {
+	if (useSystemFont !== 'f') {
 		document.documentElement.classList.add('useSystemFont');
+	}
+	if (useSystemFont === null) {
+		localStorage.setItem('useSystemFont', 't');
 	}
 
 	const wallpaper = localStorage.getItem('wallpaper');
@@ -128,3 +143,4 @@
 		location.reload();
 	}
 })();
+

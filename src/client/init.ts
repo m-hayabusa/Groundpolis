@@ -8,10 +8,12 @@ import '@/style.scss';
 if (localStorage['vuex'] !== undefined) {
 	const vuex = JSON.parse(localStorage['vuex']);
 
-	localStorage.setItem('account', JSON.stringify({
-		...vuex.i,
-		token: localStorage.getItem('i')
-	}));
+	if (localStorage.getItem('i') !== null) {
+		localStorage.setItem('account', JSON.stringify({
+			...vuex.i,
+			token: localStorage.getItem('i')
+		}));
+	}
 	localStorage.setItem('accounts', JSON.stringify(vuex.device.accounts));
 	localStorage.setItem('miux:themes', JSON.stringify(vuex.device.themes));
 
@@ -56,10 +58,9 @@ import { fetchInstance, instance } from '@/instance';
 import { makeHotkey } from './scripts/hotkey';
 import { search } from './scripts/search';
 import { getThemes } from './theme-store';
+import { initializeSw } from './scripts/initialize-sw';
 
 console.info(`Groundpolis v${version}`);
-
-window.clearTimeout((window as any).mkBootTimer);
 
 if (_DEV_) {
 	console.warn('Development mode!!!');
@@ -181,8 +182,10 @@ if ($i && $i.token) {
 //#endregion
 
 fetchInstance().then(() => {
+	localStorage.setItem('v', instance.version);
+
 	// Init service worker
-	//if (this.store.state.instance.meta.swPublickey) this.registerSw(this.store.state.instance.meta.swPublickey);
+	initializeSw();
 });
 
 stream.init($i);

@@ -512,9 +512,9 @@ export async function getAccounts() {
 	const tokens = Account.getAccounts();
 	const cacheMismatch = accounts.length !== tokens.length;
 	if (cacheMismatch || expired) {
-		accounts = (await api('users/show', { userIds: tokens.map(x => x.id) }) as Record<string, object>[])
+		accounts = (await api('users/show', { userIds: tokens.map(x => x.id) }) as Record<string, any>[])
 			.map((x, i) => ({ ...x, token: tokens[i].token  }))
-			.filter(x => x.id !== $i.id);
+			.filter(x => !$i || x.id !== $i.id);
 	}
 	
 	return Object.freeze([...accounts]);
